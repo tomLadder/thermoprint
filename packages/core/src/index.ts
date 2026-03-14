@@ -54,3 +54,6 @@ export {
   packBits,
 } from "./image/pipeline.js";
 export type { ProcessImageOptions, DitherMode } from "./image/pipeline.js";
+
+// Unit conversion
+export { PX_PER_MM, mmToPx, pxToMm } from "./utils/px-mm.js";

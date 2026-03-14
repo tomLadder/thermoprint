@@ -12,16 +12,20 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@thermoprint/core": "workspace:*",
     "@stoprocent/noble": "^1.15.0",
-    "sharp": "^0.33.0",
-    "commander": "^12.1.0",
+    "@thermoprint/core": "workspace:*",
+    "@xmldom/xmldom": "^0.8.11",
     "chalk": "^5.3.0",
-    "ora": "^8.0.1"
+    "commander": "^12.1.0",
+    "jsbarcode": "^3.12.3",
+    "ora": "^8.0.1",
+    "qrcode": "^1.5.4",
+    "sharp": "^0.33.0"
   },
   "devDependencies": {
-    "typescript": "^5.7.0",
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/qrcode": "^1.5.6",
+    "typescript": "^5.7.0"
   },
   "license": "MIT"
 }

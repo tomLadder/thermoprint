@@ -1,10 +1,2 @@
-/** Printer DPI: 203 dots per inch ≈ 8 dots per mm */
-const PX_PER_MM = 8;
-
-export function mmToPx(mm: number): number {
-  return Math.round(mm * PX_PER_MM);
-}
-
-export function pxToMm(px: number): number {
-  return px / PX_PER_MM;
-}
+// Re-export from core — single source of truth
+export { PX_PER_MM, mmToPx, pxToMm } from "@thermoprint/core";
