@@ -34,6 +34,28 @@ export function useKeyboard() {
       if (e.key === "Escape") {
         store.setSelectedId(null);
       }
+
+      if (store.selectedId && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+        e.preventDefault();
+        const step = e.shiftKey ? 10 : 1;
+        const el = store.elements.find((el) => el.id === store.selectedId);
+        if (!el) return;
+        store.pushHistory();
+        switch (e.key) {
+          case "ArrowUp":
+            store.updateElement(el.id, { y: el.y - step });
+            break;
+          case "ArrowDown":
+            store.updateElement(el.id, { y: el.y + step });
+            break;
+          case "ArrowLeft":
+            store.updateElement(el.id, { x: el.x - step });
+            break;
+          case "ArrowRight":
+            store.updateElement(el.id, { x: el.x + step });
+            break;
+        }
+      }
     };
 
     window.addEventListener("keydown", handler);

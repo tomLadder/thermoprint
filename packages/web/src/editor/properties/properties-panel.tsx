@@ -20,7 +20,7 @@ export function PropertiesPanel() {
 
   if (!element) {
     return (
-      <div className="w-56 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 p-4">
+      <div className="p-4">
         <p className="text-sm text-gray-400 dark:text-gray-500">Select an element to edit its properties</p>
       </div>
     );
@@ -29,7 +29,7 @@ export function PropertiesPanel() {
   const iconBtn = "p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-pointer";
 
   return (
-    <div className="w-56 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 p-4 overflow-y-auto">
+    <div className="p-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold capitalize">{element.type}</h3>
         <div className="flex items-center gap-0.5">

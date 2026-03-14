@@ -3,6 +3,7 @@ import type Konva from "konva";
 import { Canvas } from "./canvas.tsx";
 import { Toolbar } from "./toolbar/toolbar.tsx";
 import { PropertiesPanel } from "./properties/properties-panel.tsx";
+import { ElementTree } from "./element-tree.tsx";
 import { PrinterPanel } from "../printer/printer-panel.tsx";
 import { PrintSettingsPanel } from "../printer/print-settings-panel.tsx";
 import { PrintButton } from "../printer/print-button.tsx";
@@ -30,7 +31,11 @@ export function LabelEditor() {
           <TemplateManager />
         </div>
         <Canvas ref={stageRef} />
-        <PropertiesPanel />
+        <div className="w-56 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col overflow-y-auto">
+          <ElementTree />
+          <div className="border-t border-gray-200 dark:border-gray-700" />
+          <PropertiesPanel />
+        </div>
       </div>
     </div>
   );
