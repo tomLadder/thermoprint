@@ -143,7 +143,11 @@ export class Printer {
   async getStatus(): Promise<PrinterStatus> {
     const cmd = this.protocol.buildStatusQuery();
     await this.flowController.send(cmd.data);
-    return this.waitForResponse("status") as Promise<PrinterStatus>;
+    const response = await this.waitForResponse("status");
+    return {
+      status: (response?.value as string) ?? "unknown",
+      raw: response?.raw ?? new Uint8Array(),
+    };
   }
 
   async getBattery(): Promise<number> {

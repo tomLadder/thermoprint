@@ -1,0 +1,97 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            target: darwin-x64
+          - os: macos-latest
+            target: darwin-arm64
+          - os: ubuntu-latest
+            target: linux-x64
+          - os: ubuntu-latest
+            target: linux-arm64
+          - os: windows-latest
+            target: windows-x64
+
+    runs-on: ${{ matrix.os }}
+    name: Build ${{ matrix.target }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build binary (Unix)
+        if: matrix.os != 'windows-latest'
+        run: bun build ./packages/cli/src/index.ts --compile --target=bun-${{ matrix.target }} --outfile thermoprint-${{ matrix.target }}
+
+      - name: Build binary (Windows)
+        if: matrix.os == 'windows-latest'
+        run: bun build ./packages/cli/src/index.ts --compile --target=bun-${{ matrix.target }} --outfile thermoprint-${{ matrix.target }}.exe
+
+      - name: Upload artifact (Unix)
+        if: matrix.os != 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: thermoprint-${{ matrix.target }}
+          path: thermoprint-${{ matrix.target }}
+
+      - name: Upload artifact (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: thermoprint-${{ matrix.target }}
+          path: thermoprint-${{ matrix.target }}.exe
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    name: Create Release
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release
+          cp artifacts/thermoprint-darwin-x64/thermoprint-darwin-x64 release/
+          cp artifacts/thermoprint-darwin-arm64/thermoprint-darwin-arm64 release/
+          cp artifacts/thermoprint-linux-x64/thermoprint-linux-x64 release/
+          cp artifacts/thermoprint-linux-arm64/thermoprint-linux-arm64 release/
+          cp artifacts/thermoprint-windows-x64/thermoprint-windows-x64.exe release/
+          chmod +x release/thermoprint-darwin-* release/thermoprint-linux-*
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version }}
+          name: Release v${{ inputs.version }}
+          generate_release_notes: true
+          files: |
+            release/thermoprint-darwin-x64
+            release/thermoprint-darwin-arm64
+            release/thermoprint-linux-x64
+            release/thermoprint-linux-arm64
+            release/thermoprint-windows-x64.exe
