@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  Visual label editor in the browser, powerful CLI, and a platform-agnostic TypeScript core.<br/>
+  Visual label editor in the browser, powerful CLI for automation and AI agents, and a platform-agnostic TypeScript core.<br/>
   No server required — everything runs locally via Web Bluetooth or Noble.
 </p>
 
