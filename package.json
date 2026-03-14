@@ -1,0 +1,5 @@
+{
+  "name": "thermoprint",
+  "private": true,
+  "workspaces": ["packages/*"]
+}

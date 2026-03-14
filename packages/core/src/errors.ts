@@ -1,0 +1,28 @@
+export enum ErrorCode {
+  CONNECTION_FAILED = "CONNECTION_FAILED",
+  CONNECTION_TIMEOUT = "CONNECTION_TIMEOUT",
+  DISCONNECTED = "DISCONNECTED",
+  SERVICE_NOT_FOUND = "SERVICE_NOT_FOUND",
+  CHARACTERISTIC_NOT_FOUND = "CHARACTERISTIC_NOT_FOUND",
+  DEVICE_NOT_FOUND = "DEVICE_NOT_FOUND",
+  UNKNOWN_DEVICE = "UNKNOWN_DEVICE",
+  UNKNOWN_PROTOCOL = "UNKNOWN_PROTOCOL",
+  PRINT_FAILED = "PRINT_FAILED",
+  OUT_OF_PAPER = "OUT_OF_PAPER",
+  COVER_OPEN = "COVER_OPEN",
+  OVERHEATING = "OVERHEATING",
+  LOW_BATTERY = "LOW_BATTERY",
+  FLOW_CONTROL_TIMEOUT = "FLOW_CONTROL_TIMEOUT",
+  INVALID_IMAGE = "INVALID_IMAGE",
+}
+
+export class ThermoprintError extends Error {
+  constructor(
+    public readonly code: ErrorCode,
+    message: string,
+    public readonly cause?: unknown,
+  ) {
+    super(message);
+    this.name = "ThermoprintError";
+  }
+}

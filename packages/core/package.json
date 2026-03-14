@@ -1,0 +1,21 @@
+{
+  "name": "@thermoprint/core",
+  "version": "0.1.0",
+  "description": "TypeScript library for connecting to and printing on Bluetooth thermal printers",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./image": "./src/image/pipeline.ts"
+  },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/bun": "latest"
+  }
+}

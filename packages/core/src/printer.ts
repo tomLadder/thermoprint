@@ -1,0 +1,255 @@
+import type {
+  BleTransport,
+  BlePeripheral,
+  BleConnection,
+  BleCharacteristic,
+} from "./transport/types.js";
+import type {
+  PrintOptions,
+  PrinterStatus,
+  PrinterEventMap,
+  DeviceProfile,
+} from "./device/types.js";
+import type { RawImageData } from "./image/types.js";
+import type { ImageBitmap1bpp, PrinterResponse, PrintCommand } from "./protocol/types.js";
+import { FlowController } from "./transport/flow-control.js";
+import { findDeviceByName } from "./device/registry.js";
+import { getProtocol } from "./protocol/registry.js";
+import { processImage } from "./image/pipeline.js";
+import { ThermoprintError, ErrorCode } from "./errors.js";
+
+type EventListener<T> = (event: T) => void;
+
+const DEFAULT_MTU = 237;
+const PRINT_RESULT_TIMEOUT_MS = 10000;
+
+export class Printer {
+  private readonly listeners = new Map<string, Set<EventListener<any>>>();
+  private flowController: FlowController;
+
+  private constructor(
+    private readonly connection: BleConnection,
+    private readonly profile: DeviceProfile,
+    private readonly protocol: ReturnType<typeof getProtocol>,
+    private readonly tx: BleCharacteristic,
+    private readonly rx: BleCharacteristic,
+    private readonly cx: BleCharacteristic | null,
+    packetSize: number,
+  ) {
+    this.flowController = new FlowController(tx, packetSize, profile.flowControl);
+  }
+
+  static async connect(
+    transport: BleTransport,
+    peripheral: BlePeripheral,
+  ): Promise<Printer> {
+    const profile = findDeviceByName(peripheral.name);
+    if (!profile) {
+      throw new ThermoprintError(
+        ErrorCode.UNKNOWN_DEVICE,
+        `No device profile found for "${peripheral.name}"`,
+      );
+    }
+
+    const protocol = getProtocol(profile.protocolId);
+    const connection = await transport.connect(peripheral);
+
+    const service = await connection.discoverService(profile.serviceUuid);
+    if (!service) {
+      await connection.disconnect();
+      throw new ThermoprintError(
+        ErrorCode.SERVICE_NOT_FOUND,
+        `BLE service ${profile.serviceUuid} not found`,
+      );
+    }
+
+    const tx = await service.getCharacteristic(profile.characteristics.tx);
+    if (!tx) {
+      await connection.disconnect();
+      throw new ThermoprintError(
+        ErrorCode.CHARACTERISTIC_NOT_FOUND,
+        "TX characteristic not found",
+      );
+    }
+
+    const rx = await service.getCharacteristic(profile.characteristics.rx);
+    if (!rx) {
+      await connection.disconnect();
+      throw new ThermoprintError(
+        ErrorCode.CHARACTERISTIC_NOT_FOUND,
+        "RX characteristic not found",
+      );
+    }
+
+    const cx = profile.characteristics.cx
+      ? await service.getCharacteristic(profile.characteristics.cx)
+      : null;
+
+    let packetSize = profile.packetSize ?? DEFAULT_MTU;
+
+    const printer = new Printer(connection, profile, protocol, tx, rx, cx, packetSize);
+
+    // Subscribe to RX for status/responses
+    await rx.subscribe((data) => printer.handleRxData(data));
+
+    // Subscribe to CX for flow control / MTU
+    if (cx) {
+      await cx.subscribe((data) => printer.handleCxData(data));
+    }
+
+    return printer;
+  }
+
+  async print(image: RawImageData, options: PrintOptions = {}): Promise<void> {
+    const bitmap = processImage(image, {
+      dither: options.dither ?? "floyd-steinberg",
+      threshold: options.threshold,
+    });
+    return this.printBitmap(bitmap, options);
+  }
+
+  async printBitmap(
+    image: ImageBitmap1bpp,
+    options: PrintOptions = {},
+  ): Promise<void> {
+    const mergedOptions = {
+      density: options.density ?? this.profile.defaults.density,
+      paperType: options.paperType ?? this.profile.defaults.paperType,
+      copies: options.copies,
+    };
+
+    const commands = this.protocol.buildPrintSequence(image, mergedOptions);
+    const totalBytes = commands.reduce((sum, cmd) => sum + cmd.data.length, 0);
+    let bytesSent = 0;
+
+    for (const command of commands) {
+      if (command.bulk) {
+        await this.flowController.send(command.data, (sent) => {
+          this.emit("progress", {
+            bytesSent: bytesSent + sent,
+            totalBytes,
+          });
+        });
+      } else {
+        await this.flowController.send(command.data);
+      }
+      bytesSent += command.data.length;
+      this.emit("progress", { bytesSent, totalBytes });
+    }
+
+    await this.waitForPrintResult();
+  }
+
+  async getStatus(): Promise<PrinterStatus> {
+    const cmd = this.protocol.buildStatusQuery();
+    await this.flowController.send(cmd.data);
+    return this.waitForResponse("status") as Promise<PrinterStatus>;
+  }
+
+  async getBattery(): Promise<number> {
+    const cmd = this.protocol.buildBatteryQuery();
+    await this.flowController.send(cmd.data);
+    const response = await this.waitForResponse("battery");
+    return (response?.value as number) ?? -1;
+  }
+
+  async disconnect(): Promise<void> {
+    await this.rx.unsubscribe();
+    if (this.cx) await this.cx.unsubscribe();
+    await this.connection.disconnect();
+    this.emit("disconnected", {});
+  }
+
+  get isConnected(): boolean {
+    return this.connection.isConnected;
+  }
+
+  on<K extends keyof PrinterEventMap>(
+    event: K,
+    listener: EventListener<PrinterEventMap[K]>,
+  ): void {
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, new Set());
+    }
+    this.listeners.get(event)!.add(listener);
+  }
+
+  off<K extends keyof PrinterEventMap>(
+    event: K,
+    listener: EventListener<PrinterEventMap[K]>,
+  ): void {
+    this.listeners.get(event)?.delete(listener);
+  }
+
+  private emit<K extends keyof PrinterEventMap>(
+    event: K,
+    data: PrinterEventMap[K],
+  ): void {
+    this.listeners.get(event)?.forEach((fn) => fn(data));
+  }
+
+  private pendingResponses: Array<{
+    type: string;
+    resolve: (response: PrinterResponse) => void;
+  }> = [];
+
+  private handleRxData(data: Uint8Array): void {
+    const response = this.protocol.parseResponse(data);
+    if (!response) return;
+
+    if (response.type === "status") {
+      this.emit("status", { status: response.value as string, raw: data });
+    }
+
+    // Resolve any pending waiters
+    const idx = this.pendingResponses.findIndex((p) => p.type === response.type);
+    if (idx !== -1) {
+      this.pendingResponses.splice(idx, 1)[0].resolve(response);
+    }
+  }
+
+  private handleCxData(data: Uint8Array): void {
+    const response = this.protocol.parseResponse(data);
+    if (!response) return;
+
+    if (response.type === "credit") {
+      this.flowController.grantCredits(response.value as number);
+    }
+  }
+
+  private waitForResponse(type: string, timeoutMs = 5000): Promise<PrinterResponse> {
+    return new Promise<PrinterResponse>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        const idx = this.pendingResponses.findIndex((p) => p.type === type);
+        if (idx !== -1) this.pendingResponses.splice(idx, 1);
+        reject(new ThermoprintError(ErrorCode.PRINT_FAILED, `Timeout waiting for ${type} response`));
+      }, timeoutMs);
+
+      this.pendingResponses.push({
+        type,
+        resolve: (response) => {
+          clearTimeout(timer);
+          resolve(response);
+        },
+      });
+    });
+  }
+
+  private waitForPrintResult(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        const idx = this.pendingResponses.findIndex((p) => p.type === "success");
+        if (idx !== -1) this.pendingResponses.splice(idx, 1);
+        reject(new ThermoprintError(ErrorCode.PRINT_FAILED, "Print result timeout"));
+      }, PRINT_RESULT_TIMEOUT_MS);
+
+      this.pendingResponses.push({
+        type: "success",
+        resolve: () => {
+          clearTimeout(timer);
+          resolve();
+        },
+      });
+    });
+  }
+}

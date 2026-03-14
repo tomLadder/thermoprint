@@ -1,0 +1,27 @@
+{
+  "name": "@thermoprint/cli",
+  "version": "0.1.0",
+  "description": "CLI for Bluetooth thermal printers",
+  "type": "module",
+  "main": "src/index.ts",
+  "bin": {
+    "thermoprint": "src/index.ts"
+  },
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@thermoprint/core": "workspace:*",
+    "@stoprocent/noble": "^1.15.0",
+    "sharp": "^0.33.0",
+    "commander": "^12.1.0",
+    "chalk": "^5.3.0",
+    "ora": "^8.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/bun": "latest"
+  },
+  "license": "MIT"
+}

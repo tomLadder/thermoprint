@@ -1,0 +1,27 @@
+node_modules/
+dist/
+bun.lockb
+*.tsbuildinfo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Decompiled APK
+com.feioou.deliprint.yxq.apk/
+
+# Test artifacts
+test-label.png
+
+# Config
+.env
+.env.*
+
+# Claude Code local settings
+.claude/settings.local.json
