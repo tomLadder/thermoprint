@@ -42,7 +42,7 @@ export function ElementWrapper({ nodeRef, isSelected }: ElementWrapperProps) {
       anchorStyleFunc={(anchor: Konva.Shape) => {
         // Make the rotate anchor circular and distinct
         if (anchor.hasName("rotater")) {
-          anchor.cornerRadius(10);
+          (anchor as unknown as Konva.Rect).cornerRadius(10);
           anchor.fill("#2563eb");
           anchor.stroke("#1d4ed8");
           anchor.width(14);
