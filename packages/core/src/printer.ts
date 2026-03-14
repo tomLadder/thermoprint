@@ -11,7 +11,7 @@ import type {
   DeviceProfile,
 } from "./device/types.js";
 import type { RawImageData } from "./image/types.js";
-import type { ImageBitmap1bpp, PrinterResponse, PrintCommand } from "./protocol/types.js";
+import type { ImageBitmap1bpp, PrinterResponse } from "./protocol/types.js";
 import { FlowController } from "./transport/flow-control.js";
 import { findDeviceByName } from "./device/registry.js";
 import { getProtocol } from "./protocol/registry.js";
@@ -31,7 +31,7 @@ export class Printer {
     private readonly connection: BleConnection,
     private readonly profile: DeviceProfile,
     private readonly protocol: ReturnType<typeof getProtocol>,
-    private readonly tx: BleCharacteristic,
+    tx: BleCharacteristic,
     private readonly rx: BleCharacteristic,
     private readonly cx: BleCharacteristic | null,
     packetSize: number,
