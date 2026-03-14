@@ -1,12 +1,19 @@
 <h1 align="center">🖨️ thermoprint</h1>
 
 <p align="center">
-  <strong>Design and print labels on Bluetooth thermal printers</strong>
+  <strong>Design and print labels on Marklife P15, P12, P7 and other Bluetooth thermal printers</strong>
 </p>
 
 <p align="center">
   Visual label editor in the browser, powerful CLI, and a platform-agnostic TypeScript core.<br/>
   No server required — everything runs locally via Web Bluetooth or Noble.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Marklife_P15-supported-009688.svg" alt="Marklife P15">
+  <img src="https://img.shields.io/badge/Marklife_P12-supported-009688.svg" alt="Marklife P12">
+  <img src="https://img.shields.io/badge/Marklife_P7-supported-009688.svg" alt="Marklife P7">
+  <img src="https://img.shields.io/badge/L11_protocol-compatible-lightgrey.svg" alt="L11 Compatible">
 </p>
 
 <p align="center">
@@ -129,14 +136,16 @@ thermoprint status
 
 ## Supported Printers
 
+> **Works out of the box** with these Bluetooth thermal label printers:
+
 | Model | Protocol | Print Width | Status |
 |-------|----------|-------------|--------|
-| Marklife P15 | L11 | 384 px (48 mm) | ✅ Fully supported |
-| Marklife P12 | L11 | 384 px (48 mm) | ✅ Fully supported |
-| Marklife P7 | L11 | 384 px (48 mm) | ✅ Fully supported |
+| **Marklife P15** | L11 | 384 px (48 mm) | ✅ Fully supported |
+| **Marklife P12** | L11 | 384 px (48 mm) | ✅ Fully supported |
+| **Marklife P7** | L11 | 384 px (48 mm) | ✅ Fully supported |
 | Other L11-compatible | L11 | Varies | Should work |
 
-Adding a new printer is just a [device profile](docs/adding-a-printer.md) — a plain object with UUIDs and settings.
+**Have a different printer?** Any label printer using the L11 protocol should work. Adding a new printer is just a [device profile](docs/adding-a-printer.md) — a plain object with BLE service/characteristic UUIDs and settings.
 
 ---
 
