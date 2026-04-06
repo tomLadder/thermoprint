@@ -229,6 +229,11 @@ export class Printer {
 
     if (response.type === "credit") {
       this.flowController.grantCredits(response.value as number);
+    } else if (response.type === "mtu") {
+      const mtu = response.value as number;
+      if (mtu > 3) {
+        this.flowController.setPacketSize(mtu - 3);
+      }
     }
   }
 

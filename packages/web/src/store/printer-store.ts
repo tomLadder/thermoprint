@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import type { BlePeripheral, PrinterStatus } from "@thermoprint/core";
+import { getDevice } from "@thermoprint/core";
 import type { PrintSettings } from "./types.ts";
+import { useEditorStore } from "./editor-store.ts";
 
 interface PrinterState {
   peripheral: BlePeripheral | null;
@@ -13,6 +15,9 @@ interface PrinterState {
   printProgress: { bytesSent: number; totalBytes: number } | null;
   error: string | null;
 
+  modelId: string | null;
+  autoDetectedModelId: string | null;
+
   settings: PrintSettings;
 
   setPeripheral: (p: BlePeripheral | null) => void;
@@ -24,7 +29,22 @@ interface PrinterState {
   setBattery: (b: number) => void;
   setPrintProgress: (p: { bytesSent: number; totalBytes: number } | null) => void;
   setError: (e: string | null) => void;
+  setModelId: (id: string | null) => void;
   updateSettings: (patch: Partial<PrintSettings>) => void;
+}
+
+export function applyModelDefaults(modelId: string): void {
+  const profile = getDevice(modelId);
+  const lc = profile?.labelConfig;
+  if (!lc) return;
+
+  usePrinterStore.getState().updateSettings({
+    paperType: lc.defaultPaperType,
+  });
+
+  useEditorStore
+    .getState()
+    .setLabelConfig(lc.defaultSize.widthMm, lc.defaultSize.heightMm);
 }
 
 export const usePrinterStore = create<PrinterState>((set) => ({
@@ -37,6 +57,9 @@ export const usePrinterStore = create<PrinterState>((set) => ({
   battery: -1,
   printProgress: null,
   error: null,
+
+  modelId: null,
+  autoDetectedModelId: null,
 
   settings: {
     density: 2,
@@ -55,6 +78,7 @@ export const usePrinterStore = create<PrinterState>((set) => ({
   setBattery: (battery) => set({ battery }),
   setPrintProgress: (printProgress) => set({ printProgress }),
   setError: (error) => set({ error }),
+  setModelId: (modelId) => set({ modelId }),
   updateSettings: (patch) =>
     set((s) => ({ settings: { ...s.settings, ...patch } })),
 }));
