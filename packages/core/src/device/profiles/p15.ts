@@ -1,4 +1,17 @@
-import type { DeviceProfile } from "../types.js";
+import type { DeviceProfile, LabelSizePreset } from "../types.js";
+
+const gapSizes: LabelSizePreset[] = [
+  { widthMm: 22, heightMm: 12 },
+  { widthMm: 22, heightMm: 14 },
+  { widthMm: 26, heightMm: 15 },
+  { widthMm: 30, heightMm: 12 },
+  { widthMm: 30, heightMm: 14 },
+  { widthMm: 30, heightMm: 15 },
+  { widthMm: 40, heightMm: 12 },
+  { widthMm: 40, heightMm: 14 },
+  { widthMm: 40, heightMm: 15 },
+  { widthMm: 50, heightMm: 15 },
+];
 
 export const p15Profile: DeviceProfile = {
   modelId: "p15",
@@ -12,8 +25,6 @@ export const p15Profile: DeviceProfile = {
   packetSize: 95,
   flowControl: {
     initialCredits: 4,
-    starvationTimeoutMs: 1000,
-    timerIntervalMs: 30,
   },
   defaults: { density: 2, paperType: "gap" },
   namePrefixes: [
@@ -30,4 +41,11 @@ export const p15Profile: DeviceProfile = {
     "P1s",
     "LPC74",
   ],
+  labelConfig: {
+    supportedPaperTypes: ["gap"],
+    defaultPaperType: "gap",
+    gapSizes,
+    continuousSizes: [],
+    defaultSize: { widthMm: 40, heightMm: 12 },
+  },
 };

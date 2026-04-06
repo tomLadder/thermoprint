@@ -1,4 +1,29 @@
-import type { DeviceProfile } from "../types.js";
+import type { DeviceProfile, LabelSizePreset } from "../types.js";
+
+const gapSizes: LabelSizePreset[] = [
+  { widthMm: 22, heightMm: 12 },
+  { widthMm: 22, heightMm: 14 },
+  { widthMm: 26, heightMm: 15 },
+  { widthMm: 30, heightMm: 12 },
+  { widthMm: 30, heightMm: 14 },
+  { widthMm: 30, heightMm: 15 },
+  { widthMm: 40, heightMm: 12 },
+  { widthMm: 40, heightMm: 14 },
+  { widthMm: 40, heightMm: 15 },
+  { widthMm: 50, heightMm: 15 },
+];
+
+const continuousSizes: LabelSizePreset[] = [
+  { widthMm: 22, heightMm: 12 },
+  { widthMm: 22, heightMm: 14 },
+  { widthMm: 26, heightMm: 15 },
+  { widthMm: 30, heightMm: 12 },
+  { widthMm: 30, heightMm: 14 },
+  { widthMm: 30, heightMm: 15 },
+  { widthMm: 40, heightMm: 12 },
+  { widthMm: 40, heightMm: 15 },
+  { widthMm: 50, heightMm: 15 },
+];
 
 export const p12Profile: DeviceProfile = {
   modelId: "p12",
@@ -12,9 +37,14 @@ export const p12Profile: DeviceProfile = {
   packetSize: 90,
   flowControl: {
     initialCredits: 4,
-    starvationTimeoutMs: 1000,
-    timerIntervalMs: 30,
   },
   defaults: { density: 2, paperType: "gap" },
   namePrefixes: ["P12", "LP90", "P11"],
+  labelConfig: {
+    supportedPaperTypes: ["gap", "continuous"],
+    defaultPaperType: "gap",
+    gapSizes,
+    continuousSizes,
+    defaultSize: { widthMm: 40, heightMm: 15 },
+  },
 };

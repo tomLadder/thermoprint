@@ -32,6 +32,8 @@ export { L11Protocol } from "./protocol/l11/protocol.js";
 // Device types & registry (for adding new printer models)
 export type {
   DeviceProfile,
+  DeviceLabelConfig,
+  LabelSizePreset,
   PrintOptions,
   PrinterStatus,
   PrinterEventMap,

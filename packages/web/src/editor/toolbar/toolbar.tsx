@@ -11,7 +11,6 @@ import {
 import { useEditorStore } from "../../store/editor-store.ts";
 import { useHistory } from "../../hooks/use-history.ts";
 import type { EditorElement } from "../../store/types.ts";
-import { LabelSizeSelector } from "../../label/label-size-selector.tsx";
 import { ThemeToggle } from "../../theme/theme-toggle.tsx";
 import { Tooltip } from "../../components/tooltip.tsx";
 
@@ -184,10 +183,6 @@ export function Toolbar() {
           <button className={iconBtn} onClick={redo} disabled={!canRedo}><Redo2 size={18} /></button>
         </Tooltip>
       </div>
-
-      <div className="w-px h-7 bg-gray-200 dark:bg-gray-700 mx-1" />
-
-      <LabelSizeSelector />
 
       <div className="flex-1" />
       <ThemeToggle />

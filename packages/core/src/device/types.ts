@@ -2,6 +2,20 @@ export interface FlowControlOptions {
   initialCredits: number;
   starvationTimeoutMs: number;
   timerIntervalMs: number;
+  packetDelayMs: number;
+}
+
+export interface LabelSizePreset {
+  widthMm: number;
+  heightMm: number;
+}
+
+export interface DeviceLabelConfig {
+  supportedPaperTypes: ("gap" | "continuous")[];
+  defaultPaperType: "gap" | "continuous";
+  gapSizes: LabelSizePreset[];
+  continuousSizes: LabelSizePreset[];
+  defaultSize: LabelSizePreset;
 }
 
 export interface DeviceProfile {
@@ -13,6 +27,7 @@ export interface DeviceProfile {
   flowControl: Partial<FlowControlOptions>;
   defaults: { density: number; paperType: "gap" | "continuous" };
   namePrefixes: string[];
+  labelConfig?: DeviceLabelConfig;
 }
 
 export interface PrintOptions {

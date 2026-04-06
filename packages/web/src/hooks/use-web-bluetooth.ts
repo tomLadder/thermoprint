@@ -1,7 +1,7 @@
 import { useCallback } from "react";
-import { Printer, type BlePeripheral } from "@thermoprint/core";
+import { Printer, findDeviceByName, type BlePeripheral } from "@thermoprint/core";
 import { WebBluetoothTransport } from "../transport/web-bluetooth.ts";
-import { usePrinterStore } from "../store/printer-store.ts";
+import { usePrinterStore, applyModelDefaults } from "../store/printer-store.ts";
 
 // Module-level singletons so all callers share the same transport + printer instance
 const transport = new WebBluetoothTransport();
@@ -45,6 +45,13 @@ export function useWebBluetooth() {
 
       store.getState().setConnected(true);
       store.getState().setConnecting(false);
+
+      const profile = findDeviceByName(peripheral.name);
+      if (profile) {
+        store.getState().setModelId(profile.modelId);
+        store.setState({ autoDetectedModelId: profile.modelId });
+        applyModelDefaults(profile.modelId);
+      }
 
       try {
         const battery = await printer.getBattery();
