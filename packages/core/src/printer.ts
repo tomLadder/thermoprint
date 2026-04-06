@@ -17,6 +17,7 @@ import { findDeviceByName } from "./device/registry.js";
 import { getProtocol } from "./protocol/registry.js";
 import { processImage } from "./image/pipeline.js";
 import { ThermoprintError, ErrorCode } from "./errors.js";
+import { debugLog, formatBytes } from "./debug-log.js";
 
 type EventListener<T> = (event: T) => void;
 
@@ -102,11 +103,13 @@ export class Printer {
     if (connection.onDisconnect) {
       connection.onDisconnect(() => {
         if (!printer.disconnecting) {
+          debugLog("BLE", "unexpected disconnect");
           printer.emit("disconnected", {});
         }
       });
     }
 
+    debugLog("BLE", `connected to "${peripheral.name}" model=${profile.modelId} protocol=${profile.protocolId} packet=${packetSize} cx=${cx ? "yes" : "no"}`);
     return printer;
   }
 
@@ -128,9 +131,13 @@ export class Printer {
       copies: options.copies,
     };
 
+    this.flowController.reset();
+
     const commands = this.protocol.buildPrintSequence(image, mergedOptions);
     const totalBytes = commands.reduce((sum, cmd) => sum + cmd.data.length, 0);
     let bytesSent = 0;
+
+    debugLog("PRINT", `start ${image.width}x${image.height} ${totalBytes}B density=${mergedOptions.density} paper=${mergedOptions.paperType}`);
 
     for (const command of commands) {
       if (command.bulk) {
@@ -147,7 +154,9 @@ export class Printer {
       this.emit("progress", { bytesSent, totalBytes });
     }
 
+    debugLog("PRINT", "data sent, waiting for result");
     await this.waitForPrintResult();
+    debugLog("PRINT", "done");
   }
 
   async getStatus(): Promise<PrinterStatus> {
@@ -168,6 +177,7 @@ export class Printer {
   }
 
   async disconnect(): Promise<void> {
+    debugLog("BLE", "disconnecting");
     this.disconnecting = true;
     await this.rx.unsubscribe();
     if (this.cx) await this.cx.unsubscribe();
@@ -210,6 +220,7 @@ export class Printer {
 
   private handleRxData(data: Uint8Array): void {
     const response = this.protocol.parseResponse(data);
+    debugLog("RX", `${formatBytes(data)}${response ? ` → ${response.type}` : " (unknown)"}${response?.value !== undefined ? ` value=${response.value}` : ""}`);
     if (!response) return;
 
     if (response.type === "status") {
@@ -225,6 +236,7 @@ export class Printer {
 
   private handleCxData(data: Uint8Array): void {
     const response = this.protocol.parseResponse(data);
+    debugLog("CX", `${formatBytes(data)}${response ? ` → ${response.type}` : " (unknown)"}${response?.value !== undefined ? ` value=${response.value}` : ""}`);
     if (!response) return;
 
     if (response.type === "credit") {
@@ -232,8 +244,15 @@ export class Printer {
     } else if (response.type === "mtu") {
       const mtu = response.value as number;
       if (mtu > 3) {
+        debugLog("BLE", `mtu=${mtu} packet=${mtu - 3}`);
         this.flowController.setPacketSize(mtu - 3);
       }
+    }
+
+    // Resolve any pending waiters (e.g. success responses arriving on CX)
+    const idx = this.pendingResponses.findIndex((p) => p.type === response.type);
+    if (idx !== -1) {
+      this.pendingResponses.splice(idx, 1)[0].resolve(response);
     }
   }
 
@@ -266,6 +285,7 @@ export class Printer {
 
       const timer = setTimeout(() => {
         cleanup();
+        debugLog("PRINT", `result timeout after ${PRINT_RESULT_TIMEOUT_MS}ms`);
         reject(new ThermoprintError(ErrorCode.PRINT_FAILED, "Print result timeout"));
       }, PRINT_RESULT_TIMEOUT_MS);
 
@@ -273,6 +293,7 @@ export class Printer {
       // already transmitted and the printer powered off after processing.
       const onDisconnect = () => {
         cleanup();
+        debugLog("PRINT", "result: implicit success (disconnect)");
         resolve();
       };
       this.on("disconnected", onDisconnect);
@@ -281,6 +302,7 @@ export class Printer {
         type: "success",
         resolve: () => {
           cleanup();
+          debugLog("PRINT", "result: success");
           resolve();
         },
       });

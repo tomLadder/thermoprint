@@ -1,6 +1,7 @@
 import { useCallback, type RefObject } from "react";
 import type Konva from "konva";
 import { usePrinterStore } from "../store/printer-store.ts";
+import { useEditorStore } from "../store/editor-store.ts";
 import { useCanvasExport } from "./use-canvas-export.ts";
 import { getPrinter } from "./use-web-bluetooth.ts";
 
@@ -15,6 +16,7 @@ export function usePrinter(stageRef: RefObject<Konva.Stage | null>) {
       return;
     }
 
+    useEditorStore.getState().setSelectedId(null);
     const raw = exportForPrint();
     if (!raw) {
       usePrinterStore.getState().setError("Failed to export canvas");
