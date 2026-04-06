@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Transformer } from "react-konva";
 import type Konva from "konva";
 
+
 interface ElementWrapperProps {
   nodeRef: React.RefObject<Konva.Node | null>;
   isSelected: boolean;
@@ -37,8 +38,8 @@ export function ElementWrapper({ nodeRef, isSelected }: ElementWrapperProps) {
       borderStroke="#2563eb"
       borderStrokeWidth={2}
       borderDash={[6, 3]}
-      rotateAnchorOffset={24}
-      rotateAnchorCursor="grab"
+      rotateAnchorOffset={32}
+      rotateAnchorCursor={"grab"}
       anchorStyleFunc={(anchor: Konva.Shape) => {
         // Make the rotate anchor circular and distinct
         if (anchor.hasName("rotater")) {
@@ -47,6 +48,8 @@ export function ElementWrapper({ nodeRef, isSelected }: ElementWrapperProps) {
           anchor.stroke("#1d4ed8");
           anchor.width(14);
           anchor.height(14);
+          anchor.offsetX(7);
+          anchor.offsetY(7);
         }
         // Cursor feedback
         anchor.on("mouseenter", () => {
