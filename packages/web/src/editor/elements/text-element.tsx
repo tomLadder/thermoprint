@@ -18,18 +18,25 @@ export function TextElement({ element, isSelected }: TextElementProps) {
   const pushHistory = useEditorStore((s) => s.pushHistory);
   const setSelectedId = useEditorStore((s) => s.setSelectedId);
 
-  // Sync measured height back to the store for alignment calculations
+  // Ensure the font is loaded before measuring, then redraw
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
-    // Small delay to let Konva finish layout
-    requestAnimationFrame(() => {
+
+    const measure = () => {
       if (!ref.current) return;
       const h = ref.current.height();
       if (Math.abs(h - element.height) > 1) {
         updateElement(element.id, { height: h });
       }
+    };
+
+    document.fonts.load(`16px "${props.fontFamily}"`).then(() => {
+      node.getLayer()?.batchDraw();
+      requestAnimationFrame(measure);
     });
+
+    requestAnimationFrame(measure);
   }, [props.text, props.fontSize, props.fontFamily, props.fontStyle, element.width]);
 
   return (
