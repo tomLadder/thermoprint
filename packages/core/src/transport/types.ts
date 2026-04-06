@@ -25,6 +25,7 @@ export interface BleConnection {
   discoverService(uuid: string): Promise<BleService | null>;
   disconnect(): Promise<void>;
   readonly isConnected: boolean;
+  onDisconnect?(callback: () => void): void;
 }
 
 export interface BleService {
