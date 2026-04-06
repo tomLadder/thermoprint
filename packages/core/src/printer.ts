@@ -21,7 +21,7 @@ import { ThermoprintError, ErrorCode } from "./errors.js";
 type EventListener<T> = (event: T) => void;
 
 const DEFAULT_MTU = 237;
-const PRINT_RESULT_TIMEOUT_MS = 10000;
+const PRINT_RESULT_TIMEOUT_MS = 30000;
 
 export class Printer {
   private readonly listeners = new Map<string, Set<EventListener<any>>>();
