@@ -1,6 +1,7 @@
 import type { BleCharacteristic } from "./types.js";
 import type { FlowControlOptions } from "../device/types.js";
 import { ThermoprintError, ErrorCode } from "../errors.js";
+import { debugLog } from "../debug-log.js";
 
 const DEFAULT_OPTIONS: FlowControlOptions = {
   initialCredits: 4,
@@ -14,6 +15,8 @@ export class FlowController {
   private readonly options: FlowControlOptions;
   private lastCreditTime: number = Date.now();
   private packetSize: number;
+  /** True once the printer grants at least one real credit during a send. */
+  private hasRealCredits = false;
 
   constructor(
     private readonly tx: BleCharacteristic,
@@ -29,9 +32,19 @@ export class FlowController {
     this.packetSize = size;
   }
 
+  /** Reset credits to initial state before a new print job. */
+  reset(): void {
+    this.credits = this.options.initialCredits;
+    this.hasRealCredits = false;
+    this.lastCreditTime = Date.now();
+    debugLog("FC", `reset, credits=${this.credits}`);
+  }
+
   grantCredits(count: number): void {
     this.credits += count;
+    this.hasRealCredits = true;
     this.lastCreditTime = Date.now();
+    debugLog("FC", `+${count} credits, total=${this.credits}`);
   }
 
   /**
@@ -46,6 +59,7 @@ export class FlowController {
     onProgress?: (bytesSent: number) => void,
   ): Promise<void> {
     let offset = 0;
+    debugLog("TX", `sending ${data.length}B in ${Math.ceil(data.length / this.packetSize)} packets, credits=${this.credits}`);
 
     while (offset < data.length) {
       await this.waitForCredit();
@@ -77,10 +91,12 @@ export class FlowController {
         }
 
         // Starvation recovery: force 1 credit after timeout.
-        // With a short timeout this acts as a natural pacer, producing
-        // steady ~1-packet-per-timeout throughput when the printer
-        // doesn't actively grant credits (common over Web Bluetooth).
-        if (Date.now() - this.lastCreditTime >= starvationTimeoutMs) {
+        // Only used when the printer doesn't actively grant credits
+        // (common over Web Bluetooth). If the printer has been sending
+        // real credits via CX, respect its flow control — a pause means
+        // "buffer full", not "I don't do flow control".
+        if (!this.hasRealCredits && Date.now() - this.lastCreditTime >= starvationTimeoutMs) {
+          debugLog("FC", `starvation recovery after ${Date.now() - startTime}ms, forcing 1 credit`);
           this.credits = 1;
           this.lastCreditTime = Date.now();
           resolve();

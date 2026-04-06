@@ -8,6 +8,7 @@ import { PrinterPanel } from "../printer/printer-panel.tsx";
 import { PrintSettingsPanel } from "../printer/print-settings-panel.tsx";
 import { PrintButton } from "../printer/print-button.tsx";
 import { TemplateManager } from "../templates/template-manager.tsx";
+import { DebugLogButton } from "../printer/debug-log-button.tsx";
 import { useKeyboard } from "../hooks/use-keyboard.ts";
 import { usePrinter } from "../hooks/use-printer.ts";
 
@@ -29,6 +30,8 @@ export function LabelEditor() {
           <PrintButton onPrint={print} />
           <div className="border-t border-gray-200 dark:border-gray-700" />
           <TemplateManager />
+          <div className="border-t border-gray-200 dark:border-gray-700" />
+          <DebugLogButton />
         </div>
         <Canvas ref={stageRef} />
         <div className="w-56 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col overflow-y-auto">

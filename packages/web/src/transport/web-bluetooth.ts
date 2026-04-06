@@ -77,11 +77,17 @@ class WebBluetoothService implements BleService {
 
 class WebBluetoothConnection implements BleConnection {
   private connected = true;
+  private disconnectCallback: (() => void) | null = null;
 
   constructor(private readonly device: BluetoothDevice) {
     device.addEventListener("gattserverdisconnected", () => {
       this.connected = false;
+      this.disconnectCallback?.();
     });
+  }
+
+  onDisconnect(callback: () => void): void {
+    this.disconnectCallback = callback;
   }
 
   async discoverService(uuid: string): Promise<BleService | null> {

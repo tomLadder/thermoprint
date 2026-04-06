@@ -57,5 +57,16 @@ export {
 } from "./image/pipeline.js";
 export type { ProcessImageOptions, DitherMode } from "./image/pipeline.js";
 
+// Debug logging
+export {
+  debugLog,
+  getDebugLog,
+  getDebugLogVersion,
+  clearDebugLog,
+  onDebugLogChange,
+  exportDebugLog,
+} from "./debug-log.js";
+export type { DebugEntry } from "./debug-log.js";
+
 // Unit conversion
 export { PX_PER_MM, mmToPx, pxToMm } from "./utils/px-mm.js";
