@@ -26,6 +26,7 @@ const PRINT_RESULT_TIMEOUT_MS = 30000;
 export class Printer {
   private readonly listeners = new Map<string, Set<EventListener<any>>>();
   private flowController: FlowController;
+  private disconnecting = false;
 
   private constructor(
     private readonly connection: BleConnection,
@@ -97,6 +98,15 @@ export class Printer {
       await cx.subscribe((data) => printer.handleCxData(data));
     }
 
+    // Emit disconnected event on unexpected BLE link loss
+    if (connection.onDisconnect) {
+      connection.onDisconnect(() => {
+        if (!printer.disconnecting) {
+          printer.emit("disconnected", {});
+        }
+      });
+    }
+
     return printer;
   }
 
@@ -158,6 +168,7 @@ export class Printer {
   }
 
   async disconnect(): Promise<void> {
+    this.disconnecting = true;
     await this.rx.unsubscribe();
     if (this.cx) await this.cx.unsubscribe();
     await this.connection.disconnect();
@@ -241,16 +252,30 @@ export class Printer {
 
   private waitForPrintResult(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(() => {
+      const cleanup = () => {
+        clearTimeout(timer);
+        this.off("disconnected", onDisconnect);
         const idx = this.pendingResponses.findIndex((p) => p.type === "success");
         if (idx !== -1) this.pendingResponses.splice(idx, 1);
+      };
+
+      const timer = setTimeout(() => {
+        cleanup();
         reject(new ThermoprintError(ErrorCode.PRINT_FAILED, "Print result timeout"));
       }, PRINT_RESULT_TIMEOUT_MS);
+
+      // Treat post-send disconnect as implicit success — all data was
+      // already transmitted and the printer powered off after processing.
+      const onDisconnect = () => {
+        cleanup();
+        resolve();
+      };
+      this.on("disconnected", onDisconnect);
 
       this.pendingResponses.push({
         type: "success",
         resolve: () => {
-          clearTimeout(timer);
+          cleanup();
           resolve();
         },
       });

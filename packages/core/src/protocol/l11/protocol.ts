@@ -28,7 +28,7 @@ export class L11Protocol implements PrinterProtocol {
     if (density !== undefined) {
       commands.push(cmd.setDensity(density));
     }
-    commands.push(...cmd.wakeup().data ? [cmd.wakeup()] : [cmd.wakeup()]);
+    commands.push(cmd.wakeup());
     commands.push(cmd.enable());
     commands.push(cmd.printBitmap(image));
 
@@ -55,9 +55,16 @@ export class L11Protocol implements PrinterProtocol {
   }
 
   parseResponse(data: Uint8Array): PrinterResponse | null {
-    if (data.length < 2) return null;
+    if (data.length < 1) return null;
 
     const first = data[0];
+
+    // Print success: 0xAA, 0x4F ('O'), 0x4B ('K') — can be a single byte
+    if (first === 0xaa || first === 0x4f || first === 0x4b) {
+      return { type: "success", raw: data };
+    }
+
+    if (data.length < 2) return null;
     const second = data[1];
 
     // Credit grant: [0x01, count]
@@ -79,11 +86,6 @@ export class L11Protocol implements PrinterProtocol {
         raw: data,
         value: status ?? `unknown_${second.toString(16)}`,
       };
-    }
-
-    // Print success: 0xAA, 0x4F ('O'), 0x4B ('K')
-    if (first === 0xaa || first === 0x4f || first === 0x4b) {
-      return { type: "success", raw: data };
     }
 
     return null;

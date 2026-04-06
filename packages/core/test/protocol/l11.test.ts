@@ -137,6 +137,21 @@ describe("L11Protocol", () => {
     expect(response?.type).toBe("success");
   });
 
+  test("parseResponse identifies single-byte success (0xAA)", () => {
+    const response = proto.parseResponse(Uint8Array.from([0xaa]));
+    expect(response?.type).toBe("success");
+  });
+
+  test("parseResponse identifies single-byte success (0x4F)", () => {
+    const response = proto.parseResponse(Uint8Array.from([0x4f]));
+    expect(response?.type).toBe("success");
+  });
+
+  test("parseResponse identifies single-byte success (0x4B)", () => {
+    const response = proto.parseResponse(Uint8Array.from([0x4b]));
+    expect(response?.type).toBe("success");
+  });
+
   test("parseResponse returns null for unknown data", () => {
     const response = proto.parseResponse(Uint8Array.from([0x00]));
     expect(response).toBeNull();
