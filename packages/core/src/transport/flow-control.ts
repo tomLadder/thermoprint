@@ -5,7 +5,7 @@ import { debugLog } from "../debug-log.js";
 
 const DEFAULT_OPTIONS: FlowControlOptions = {
   initialCredits: 4,
-  starvationTimeoutMs: 30,
+  starvationTimeoutMs: 1000,
   timerIntervalMs: 5,
   packetDelayMs: 0,
 };
@@ -35,7 +35,10 @@ export class FlowController {
   /** Reset credits to initial state before a new print job. */
   reset(): void {
     this.credits = this.options.initialCredits;
-    this.hasRealCredits = false;
+    // Preserve hasRealCredits — it reflects whether this device supports
+    // credit-based flow control, which is a connection-level property.
+    // Clearing it would let starvation recovery bypass flow control at the
+    // start of every print job.
     this.lastCreditTime = Date.now();
     debugLog("FC", `reset, credits=${this.credits}`);
   }

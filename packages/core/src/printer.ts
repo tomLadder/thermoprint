@@ -244,8 +244,14 @@ export class Printer {
     } else if (response.type === "mtu") {
       const mtu = response.value as number;
       if (mtu > 3) {
-        debugLog("BLE", `mtu=${mtu} packet=${mtu - 3}`);
-        this.flowController.setPacketSize(mtu - 3);
+        const mtuPacketSize = mtu - 3;
+        // Cap at profile-specified size — the profile knows what the device
+        // firmware can handle; a higher BLE MTU doesn't mean the printer's
+        // application-level buffer can keep up with larger writes.
+        const cap = this.profile.packetSize;
+        const effective = cap ? Math.min(mtuPacketSize, cap) : mtuPacketSize;
+        debugLog("BLE", `mtu=${mtu} packet=${effective}${cap && mtuPacketSize > cap ? ` (capped from ${mtuPacketSize})` : ""}`);
+        this.flowController.setPacketSize(effective);
       }
     }
 
