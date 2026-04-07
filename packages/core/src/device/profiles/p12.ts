@@ -37,6 +37,7 @@ export const p12Profile: DeviceProfile = {
   packetSize: 90,
   flowControl: {
     initialCredits: 4,
+    packetDelayMs: 30,
   },
   defaults: { density: 2, paperType: "gap" },
   namePrefixes: ["P12", "LP90", "P11"],
