@@ -131,8 +131,6 @@ export class Printer {
       copies: options.copies,
     };
 
-    this.flowController.reset();
-
     const commands = this.protocol.buildPrintSequence(image, mergedOptions);
     const totalBytes = commands.reduce((sum, cmd) => sum + cmd.data.length, 0);
     let bytesSent = 0;

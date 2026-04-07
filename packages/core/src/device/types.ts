@@ -1,7 +1,5 @@
 export interface FlowControlOptions {
-  initialCredits: number;
   starvationTimeoutMs: number;
-  timerIntervalMs: number;
   packetDelayMs: number;
 }
 

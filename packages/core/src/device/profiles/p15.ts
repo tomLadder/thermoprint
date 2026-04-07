@@ -24,7 +24,6 @@ export const p15Profile: DeviceProfile = {
   },
   packetSize: 95,
   flowControl: {
-    initialCredits: 4,
     packetDelayMs: 30,
   },
   defaults: { density: 2, paperType: "gap" },

@@ -21,9 +21,8 @@ export const p20Profile: DeviceProfile = {
   },
   packetSize: 95,                              // BLE write chunk size in bytes
   flowControl: {
-    initialCredits: 4,
     starvationTimeoutMs: 1000,
-    timerIntervalMs: 30,
+    packetDelayMs: 30,
   },
   defaults: { density: 2, paperType: "gap" },  // "gap" for label paper, "continuous" for receipt
   namePrefixes: ["P20", "P20S"],               // BLE advertised name prefixes
@@ -53,7 +52,7 @@ That's it. `discover()` will now match peripherals whose name starts with "P20" 
 | `characteristics.rx` | `string` | Notify characteristic for responses |
 | `characteristics.cx` | `string?` | Notify characteristic for flow control credits (optional) |
 | `packetSize` | `number?` | Max bytes per BLE write (default: 237) |
-| `flowControl` | `Partial<FlowControlOptions>` | Override `initialCredits`, `starvationTimeoutMs`, `timerIntervalMs` |
+| `flowControl` | `Partial<FlowControlOptions>` | Override `starvationTimeoutMs`, `packetDelayMs` |
 | `defaults.density` | `number` | Default print density (0-3) |
 | `defaults.paperType` | `"gap" \| "continuous"` | Default paper type |
 | `namePrefixes` | `string[]` | BLE name prefixes to match during discovery |
