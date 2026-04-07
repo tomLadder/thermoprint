@@ -64,8 +64,14 @@ export class FlowController {
     let offset = 0;
     debugLog("TX", `sending ${data.length}B in ${Math.ceil(data.length / this.packetSize)} packets, credits=${this.credits}`);
 
+    const { packetDelayMs } = this.options;
+
     while (offset < data.length) {
       await this.waitForCredit();
+
+      if (packetDelayMs > 0 && offset > 0) {
+        await new Promise((r) => setTimeout(r, packetDelayMs));
+      }
 
       const remaining = data.length - offset;
       const chunkSize = Math.min(remaining, this.packetSize);
