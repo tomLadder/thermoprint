@@ -17,7 +17,8 @@ function createMockTx(): BleCharacteristic & { written: Uint8Array[] } {
 describe("FlowController", () => {
   test("chunks data according to packet size", async () => {
     const tx = createMockTx();
-    const fc = new FlowController(tx, 10, { initialCredits: 100 });
+    const fc = new FlowController(tx, 10, { packetDelayMs: 1 });
+    fc.grantCredits(100);
 
     const data = new Uint8Array(25);
     await fc.send(data);
@@ -30,7 +31,8 @@ describe("FlowController", () => {
 
   test("uses write without response", async () => {
     const tx = createMockTx();
-    const fc = new FlowController(tx, 100, { initialCredits: 4 });
+    const fc = new FlowController(tx, 100, { packetDelayMs: 1 });
+    fc.grantCredits(4);
 
     await fc.send(new Uint8Array(10));
     expect(tx.write).toHaveBeenCalledWith(expect.any(Uint8Array), true);
@@ -38,7 +40,8 @@ describe("FlowController", () => {
 
   test("decrements credits on send", async () => {
     const tx = createMockTx();
-    const fc = new FlowController(tx, 100, { initialCredits: 4 });
+    const fc = new FlowController(tx, 100, { packetDelayMs: 1 });
+    fc.grantCredits(4);
 
     await fc.send(new Uint8Array(10));
     expect(fc.availableCredits).toBe(3);
@@ -46,15 +49,25 @@ describe("FlowController", () => {
 
   test("grantCredits increases available credits", async () => {
     const tx = createMockTx();
-    const fc = new FlowController(tx, 100, { initialCredits: 2 });
+    const fc = new FlowController(tx, 100);
 
     fc.grantCredits(3);
+    expect(fc.availableCredits).toBe(3);
+
+    fc.grantCredits(2);
     expect(fc.availableCredits).toBe(5);
+  });
+
+  test("starts with zero credits", () => {
+    const tx = createMockTx();
+    const fc = new FlowController(tx, 100);
+    expect(fc.availableCredits).toBe(0);
   });
 
   test("reports progress during send", async () => {
     const tx = createMockTx();
-    const fc = new FlowController(tx, 10, { initialCredits: 100 });
+    const fc = new FlowController(tx, 10, { packetDelayMs: 1 });
+    fc.grantCredits(100);
 
     const progress: number[] = [];
     await fc.send(new Uint8Array(25), (sent) => progress.push(sent));
@@ -65,12 +78,12 @@ describe("FlowController", () => {
   test("starvation recovery forces 1 credit", async () => {
     const tx = createMockTx();
     const fc = new FlowController(tx, 100, {
-      initialCredits: 1,
       starvationTimeoutMs: 50,
-      timerIntervalMs: 10,
+      packetDelayMs: 10,
     });
 
-    // Send first packet to exhaust credits
+    // Grant 1 credit, send to exhaust it
+    fc.grantCredits(1);
     await fc.send(new Uint8Array(10));
     expect(fc.availableCredits).toBe(0);
 

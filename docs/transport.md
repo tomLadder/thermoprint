@@ -220,17 +220,15 @@ Thermoprint uses **credit-based flow control** to avoid overwhelming the printer
 
 ### How it works
 
-1. **Initial credits.** The `FlowController` starts with `initialCredits` (default: 4). Each credit allows sending one packet.
+1. **Credits start at zero.** The `FlowController` starts with no credits. The printer grants the initial credits (typically 4) via a CX notification after connection. Each credit allows sending one packet.
 
-2. **Packet chunking.** Data is split into chunks of `packetSize` bytes (P15: 95 bytes, P12: 90 bytes, fallback: 237 = default MTU). Each chunk consumes one credit.
+2. **Timer-based sending.** Data is sent on a periodic timer matching the official Marklife app's approach. The timer interval is `packetDelayMs` (P15: 30ms, default: 30ms). On each tick, at most one packet is sent if credits are available.
 
-3. **Credit grants.** The printer sends credit notifications on the CX characteristic. The protocol parses `[0x01, count]` as a credit grant. `FlowController.grantCredits(count)` adds them.
+3. **Packet chunking.** Data is split into chunks of `packetSize` bytes (P15: 95 bytes, P12: 90 bytes, fallback: 237 = default MTU). Each chunk consumes one credit.
 
-4. **Waiting.** When credits reach 0, `send()` polls every `timerIntervalMs` (default: 30ms) until a credit arrives.
+4. **Credit grants.** The printer sends credit notifications on the CX characteristic. The protocol parses `[0x01, count]` as a credit grant. `FlowController.grantCredits(count)` adds them.
 
-5. **Starvation recovery.** If no credit arrives within `starvationTimeoutMs` (default: 1000ms), the controller forces `credits = 1` and continues. This prevents deadlocks caused by lost BLE notifications.
-
-6. **Hard timeout.** If starvation recovery repeats for 10x the starvation timeout (10 seconds), a `FLOW_CONTROL_TIMEOUT` error is thrown.
+5. **Starvation recovery.** If no credit arrives within `starvationTimeoutMs` (default: 1000ms), the controller unconditionally forces `credits = 1` and continues. This matches the official app's recovery logic and prevents deadlocks caused by lost BLE notifications.
 
 ### Sequence diagram
 
