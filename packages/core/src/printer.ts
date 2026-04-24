@@ -157,10 +157,10 @@ export class Printer {
     debugLog("PRINT", "done");
   }
 
-  async getStatus(): Promise<PrinterStatus> {
+  async getStatus(timeoutMs = 5000): Promise<PrinterStatus> {
     const cmd = this.protocol.buildStatusQuery();
     await this.flowController.send(cmd.data);
-    const response = await this.waitForResponse("status");
+    const response = await this.waitForResponse("status", timeoutMs);
     return {
       status: (response?.value as string) ?? "unknown",
       raw: response?.raw ?? new Uint8Array(),
@@ -170,8 +170,28 @@ export class Printer {
   async getBattery(): Promise<number> {
     const cmd = this.protocol.buildBatteryQuery();
     await this.flowController.send(cmd.data);
-    const response = await this.waitForResponse("battery");
-    return (response?.value as number) ?? -1;
+    const response = await this.waitForResponse("battery", 3000);
+    // Battery is in response[1] as a raw byte (0-100)
+    if (response.value !== undefined) return response.value as number;
+    if (response.raw.length >= 2) return response.raw[1];
+    return response.raw[0] ?? -1;
+  }
+
+  async getModel(): Promise<string> {
+    const cmd = this.protocol.buildModelQuery();
+    await this.flowController.send(cmd.data);
+    const response = await this.waitForResponse("model", 3000);
+    if (typeof response.value === "string" && response.value) return response.value;
+    return new TextDecoder().decode(response.raw).replace(/\0/g, "").trim();
+  }
+
+  async getInfo(type: "firmware" | "serial" | "mac" | "bt-version" | "bt-name" | "speed"): Promise<string> {
+    const cmd = this.protocol.buildInfoQuery(type);
+    await this.flowController.send(cmd.data);
+    const response = await this.waitForResponse(type, 3000);
+    if (typeof response.value === "string" && response.value) return response.value;
+    if (typeof response.value === "number") return String(response.value);
+    return new TextDecoder().decode(response.raw).replace(/\0/g, "").trim();
   }
 
   async disconnect(): Promise<void> {
@@ -219,16 +239,31 @@ export class Printer {
   private handleRxData(data: Uint8Array): void {
     const response = this.protocol.parseResponse(data);
     debugLog("RX", `${formatBytes(data)}${response ? ` → ${response.type}` : " (unknown)"}${response?.value !== undefined ? ` value=${response.value}` : ""}`);
-    if (!response) return;
 
-    if (response.type === "status") {
-      this.emit("status", { status: response.value as string, raw: data });
+    if (response) {
+      if (response.type === "status") {
+        this.emit("status", { status: response.value as string, raw: data });
+      }
+
+      // Resolve any pending waiters matching the parsed type
+      const idx = this.pendingResponses.findIndex((p) => p.type === response.type);
+      if (idx !== -1) {
+        this.pendingResponses.splice(idx, 1)[0].resolve(response);
+        return;
+      }
     }
 
-    // Resolve any pending waiters
-    const idx = this.pendingResponses.findIndex((p) => p.type === response.type);
-    if (idx !== -1) {
-      this.pendingResponses.splice(idx, 1)[0].resolve(response);
+    // Unrecognized data — if there's a pending query waiter (battery/model/firmware),
+    // deliver the raw bytes to it. The Marklife printer returns query responses as
+    // raw data without echoing the command prefix.
+    if (!response && this.pendingResponses.length > 0) {
+      const waiter = this.pendingResponses[0];
+      const queryTypes = ["battery", "model", "firmware", "serial", "mac", "bt-version", "bt-name", "speed", "status"];
+      if (queryTypes.includes(waiter.type)) {
+        debugLog("RX", `routing raw data to pending "${waiter.type}" waiter`);
+        this.pendingResponses.splice(0, 1);
+        waiter.resolve({ type: waiter.type as PrinterResponse["type"], raw: data });
+      }
     }
   }
 

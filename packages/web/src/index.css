@@ -1,27 +1,123 @@
 @import "tailwindcss";
+@import "./themes.css";
 
-@custom-variant dark (&:where(.dark, .dark *));
+@theme {
+  /* Surface / ink palette */
+  --color-ink-950: #0a0d12;
+  --color-ink-900: #0f1319;
+  --color-ink-850: #141922;
+  --color-ink-800: #1a212c;
+  --color-ink-750: #1f2732;
+  --color-ink-700: #262f3d;
+  --color-ink-600: #323d4d;
+  --color-ink-500: #4a5668;
+  --color-ink-400: #6b7689;
+  --color-ink-300: #9aa3b4;
+  --color-ink-200: #c3c9d4;
+  --color-ink-100: #e4e7ec;
+  --color-ink-50:  #f5f6f8;
+
+  /* Cyan accent */
+  --color-accent:     #2ad0ff;
+  --color-accent-500: #2ad0ff;
+  --color-accent-600: #10b5e6;
+  --color-accent-700: #0a8aba;
+  --color-accent-900: #0a3a4c;
+
+  /* Shadows */
+  --shadow-dock:  0 10px 40px -10px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
+  --shadow-panel: 0 8px 30px -12px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05);
+
+  /* Fonts */
+  --font-sans: Inter, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+/* --- UI Scale tokens ---
+   One variable (--ui-scale) drives all chrome sizing.
+   Slider range: 0.85 – 1.3, default 1.0.
+   Canvas/label rendering is NOT affected — only app chrome. */
+
+:root {
+  --ui-scale: 1;
+
+  /* Font-size tokens — change these base values to resize all UI text globally */
+  --ui-text-2xs: calc(11px * var(--ui-scale));
+  --ui-text-xs:  calc(12px * var(--ui-scale));
+  --ui-text-sm:  calc(13px * var(--ui-scale));
+  --ui-text-base: calc(14px * var(--ui-scale));
+  --ui-text-md:  calc(15px * var(--ui-scale));
+  --ui-text-lg:  calc(16px * var(--ui-scale));
+  --ui-text-xl:  calc(20px * var(--ui-scale));
+}
+
+/* Tailwind utility classes that reference the tokens */
+@utility text-ui-2xs { font-size: var(--ui-text-2xs); }
+@utility text-ui-xs  { font-size: var(--ui-text-xs); }
+@utility text-ui-sm  { font-size: var(--ui-text-sm); }
+@utility text-ui-base { font-size: var(--ui-text-base); }
+@utility text-ui-md  { font-size: var(--ui-text-md); }
+@utility text-ui-lg  { font-size: var(--ui-text-lg); }
+@utility text-ui-xl  { font-size: var(--ui-text-xl); }
+@utility text-on-accent { color: var(--color-on-accent); }
+
+/* --- Global utilities --- */
+
+.dot-grid {
+  background-image: radial-gradient(var(--color-ink-700) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.sel-outline {
+  outline: 1.5px solid var(--color-accent);
+  outline-offset: 0;
+}
+
+.hover-fade {
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+@keyframes pulse-accent {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.pulse {
+  animation: pulse-accent 1.8s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%   { transform: translateX(-64px); opacity: 0; }
+  40%  { opacity: 1; }
+  100% { transform: translateX(16px);  opacity: 0; }
+}
+
+/* --- Pointer cursor on all interactive elements --- */
+
+button,
+[role="button"],
+input[type="checkbox"],
+input[type="radio"],
+input[type="range"],
+select,
+label,
+summary,
+a {
+  cursor: pointer;
+}
+
+/* --- Base resets --- */
 
 html {
-  font-size: 18px;
+  font-size: calc(16px * var(--ui-scale, 1));
 }
 
 body {
-  font-family: "Roboto", system-ui, -apple-system, sans-serif;
   margin: 0;
-}
-
-.font-mono {
-  font-family: "JetBrains Mono", monospace;
 }
 
 /* Themed scrollbars */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
-}
-
-.dark * {
   scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
 
@@ -35,18 +131,27 @@ body {
 }
 
 *::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 4px;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.25);
-}
-
-.dark *::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.dark *::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
+}
+
+/* kbd styling for shortcut hints */
+kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 5px;
+  background: var(--color-ink-800);
+  border: 1px solid var(--color-ink-700);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--color-ink-300);
+  line-height: 1;
 }

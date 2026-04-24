@@ -13,6 +13,9 @@ export type PrinterResponseType =
   | "firmware"
   | "serial"
   | "mac"
+  | "bt-version"
+  | "bt-name"
+  | "speed"
   | "credit"
   | "mtu";
 
@@ -44,5 +47,7 @@ export interface PrinterProtocol {
   buildWakeup(): PrintCommand[];
   buildStatusQuery(): PrintCommand;
   buildBatteryQuery(): PrintCommand;
+  buildModelQuery(): PrintCommand;
+  buildInfoQuery(type: "firmware" | "serial" | "mac" | "bt-version" | "bt-name" | "speed"): PrintCommand;
   parseResponse(data: Uint8Array): PrinterResponse | null;
 }

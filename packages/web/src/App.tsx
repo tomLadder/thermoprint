@@ -1,4 +1,4 @@
-import { LabelEditor } from "./editor/label-editor.tsx";
+import { Editor } from "./editor/editor.tsx";
 
 function BluetoothUnsupportedBanner() {
   return (
@@ -25,7 +25,7 @@ export function App() {
   return (
     <>
       {!isBluetoothSupported && <BluetoothUnsupportedBanner />}
-      <LabelEditor />
+      <Editor />
     </>
   );
 }

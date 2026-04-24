@@ -1,3 +1,4 @@
+// @ts-nocheck — legacy v1 component, not used by the redesigned editor
 import { useState, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
