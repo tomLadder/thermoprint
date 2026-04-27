@@ -7,6 +7,7 @@ import {
   Maximize2,
   Grid3x3,
   Ruler,
+  Heart,
 } from "lucide-react";
 import { useEditorV2Store } from "../../store/editor-store.ts";
 import { PrintButton } from "./print-button.tsx";
@@ -77,6 +78,9 @@ export function TopChrome({ onPrint }: TopChromeProps) {
           <button className={viewBtn(rulersVisible)} title="Rulers" onClick={() => useEditorV2Store.setState((s) => ({ rulersVisible: !s.rulersVisible }))}><Ruler size={15} /></button>
           <ThemePicker />
         </div>
+        <a href="https://github.com/sponsors/tomLadder" target="_blank" rel="noopener noreferrer" className="w-8 h-8 flex items-center justify-center rounded-md text-pink-400 hover:bg-pink-500/10 hover:text-pink-300 hover-fade" title="Sponsor this project">
+          <Heart size={16} />
+        </a>
         <PrintButton onPrint={onPrint} />
       </div>
 
@@ -116,6 +120,9 @@ export function TopChrome({ onPrint }: TopChromeProps) {
             <Grid3x3 size={14} />
           </button>
           <ThemePicker />
+          <a href="https://github.com/sponsors/tomLadder" target="_blank" rel="noopener noreferrer" className="w-7 h-7 flex items-center justify-center rounded-md text-pink-400 hover:bg-pink-500/10 hover:text-pink-300 hover-fade" title="Sponsor">
+            <Heart size={14} />
+          </a>
         </div>
       </div>
     </div>

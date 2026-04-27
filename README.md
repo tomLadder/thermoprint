@@ -22,10 +22,12 @@
   <a href="#packages">Packages</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#supported-printers">Printers</a> •
-  <a href="#architecture">Architecture</a>
+  <a href="#architecture">Architecture</a> •
+  <a href="#support-the-project">Sponsor</a>
 </p>
 
 <p align="center">
+  <a href="https://github.com/sponsors/tomLadder"><img src="https://img.shields.io/badge/sponsor-%E2%9D%A4-ff69b4.svg" alt="Sponsor"></a>
   <a href="https://tomladder.github.io/thermoprint/"><img src="https://img.shields.io/badge/web_editor-online-005F59.svg" alt="Web Editor"></a>
   <img src="https://img.shields.io/badge/version-0.1.0-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
@@ -264,6 +266,14 @@ The printer feeds paper lengthwise, so the image is rotated 90° before printing
 - **BLE:** [@stoprocent/noble](https://github.com/nicedoc/noble) (CLI), [Web Bluetooth API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API) (Web)
 - **Image:** [sharp](https://sharp.pixelplumbing.com) (CLI), Canvas API (Web)
 - **CLI:** [Commander.js](https://github.com/tj/commander.js) + [Chalk](https://github.com/chalk/chalk) + [Ora](https://github.com/sindresorhus/ora)
+
+---
+
+## Support the Project
+
+All sponsorship money goes directly toward buying more thermal printers so they can be reverse-engineered and supported in thermoprint. Every new printer means broader compatibility for everyone.
+
+If you find thermoprint useful, consider [sponsoring the project](https://github.com/sponsors/tomLadder) — your contribution helps grow the list of supported printers.
 
 ---
 
