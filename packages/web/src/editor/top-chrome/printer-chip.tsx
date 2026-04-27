@@ -149,7 +149,10 @@ export function PrinterChip() {
       </button>
 
       {printFlyoutOpen && (
-        <div className="fixed inset-x-2 top-14 max-h-[80vh] overflow-y-auto md:max-h-none md:overflow-visible md:inset-auto md:absolute md:left-0 md:top-10 md:w-72 bg-ink-850 border border-white/8 rounded-lg shadow-panel p-3 z-[60]">
+        <div
+          onMouseDown={(e) => e.stopPropagation()}
+          className="fixed inset-x-2 top-14 max-h-[80vh] overflow-y-auto md:max-h-none md:overflow-visible md:inset-auto md:absolute md:left-0 md:top-10 md:w-72 bg-ink-850 border border-white/8 rounded-lg shadow-panel p-3 z-[60]"
+        >
           <div className="flex items-start justify-between mb-3">
             <div>
               <div className="text-ui-xs font-mono uppercase tracking-wider text-ink-400">
