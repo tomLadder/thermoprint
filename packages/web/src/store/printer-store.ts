@@ -3,6 +3,7 @@ import type { BlePeripheral, PrinterStatus } from "@thermoprint/core";
 import { getDevice } from "@thermoprint/core";
 import type { PrintSettings } from "./types.ts";
 import { useEditorStore } from "./editor-store.ts";
+import { mmToPx } from "../utils/px-mm.ts";
 
 interface PrinterState {
   peripheral: BlePeripheral | null;
@@ -17,6 +18,16 @@ interface PrinterState {
 
   modelId: string | null;
   autoDetectedModelId: string | null;
+  deviceModel: string | null;
+  deviceInfo: {
+    firmware: string | null;
+    serial: string | null;
+    mac: string | null;
+    btVersion: string | null;
+    btName: string | null;
+    speed: string | null;
+  };
+  printerStatus: string | null;
 
   settings: PrintSettings;
 
@@ -42,9 +53,10 @@ export function applyModelDefaults(modelId: string): void {
     paperType: lc.defaultPaperType,
   });
 
-  useEditorStore
-    .getState()
-    .setLabelConfig(lc.defaultSize.widthMm, lc.defaultSize.heightMm);
+  const { widthMm, heightMm } = lc.defaultSize;
+  useEditorStore.setState({
+    label: { widthMm, heightMm, widthPx: mmToPx(widthMm), heightPx: mmToPx(heightMm) },
+  });
 }
 
 export const usePrinterStore = create<PrinterState>((set) => ({
@@ -60,6 +72,16 @@ export const usePrinterStore = create<PrinterState>((set) => ({
 
   modelId: null,
   autoDetectedModelId: null,
+  deviceModel: null,
+  deviceInfo: {
+    firmware: null,
+    serial: null,
+    mac: null,
+    btVersion: null,
+    btName: null,
+    speed: null,
+  },
+  printerStatus: null,
 
   settings: {
     density: 2,

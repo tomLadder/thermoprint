@@ -54,6 +54,21 @@ export class L11Protocol implements PrinterProtocol {
     return cmd.getBattery();
   }
 
+  buildModelQuery(): PrintCommand {
+    return cmd.getModel();
+  }
+
+  buildInfoQuery(type: "firmware" | "serial" | "mac" | "bt-version" | "bt-name" | "speed"): PrintCommand {
+    switch (type) {
+      case "firmware": return cmd.getFirmware();
+      case "serial": return cmd.getSerial();
+      case "mac": return cmd.getMac();
+      case "bt-version": return cmd.getBtVersion();
+      case "bt-name": return cmd.getBtName();
+      case "speed": return cmd.getSpeed();
+    }
+  }
+
   parseResponse(data: Uint8Array): PrinterResponse | null {
     if (data.length < 1) return null;
 

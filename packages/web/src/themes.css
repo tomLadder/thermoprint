@@ -1,0 +1,288 @@
+/* ============================================================
+   Thermoprint — Theme System
+   6 palettes × 2 modes = 12 blocks.
+   Overrides the CSS vars defined in @theme (index.css).
+   ============================================================ */
+
+/* ---------- CYAN (default) ---------- */
+
+[data-theme="cyan"][data-mode="dark"] {
+  --color-ink-950: #0a0d12;
+  --color-ink-900: #0f1319;
+  --color-ink-850: #141922;
+  --color-ink-800: #1a212c;
+  --color-ink-750: #1f2732;
+  --color-ink-700: #262f3d;
+  --color-ink-600: #323d4d;
+  --color-ink-500: #4a5668;
+  --color-ink-400: #6b7689;
+  --color-ink-300: #9aa3b4;
+  --color-ink-200: #c3c9d4;
+  --color-ink-100: #e4e7ec;
+  --color-ink-50:  #f5f6f8;
+  --color-accent:     #2ad0ff;
+  --color-accent-500: #2ad0ff;
+  --color-accent-600: #10b5e6;
+  --color-accent-700: #0a8aba;
+  --color-accent-900: #0a3a4c;
+  --color-on-accent: #ffffff;
+}
+
+[data-theme="cyan"][data-mode="light"] {
+  --color-ink-950: #f8f9fb;
+  --color-ink-900: #f1f3f6;
+  --color-ink-850: #e8ebf0;
+  --color-ink-800: #dfe3e9;
+  --color-ink-750: #d3d8e0;
+  --color-ink-700: #c5cad4;
+  --color-ink-600: #a8b0be;
+  --color-ink-500: #8792a4;
+  --color-ink-400: #5f6b7e;
+  --color-ink-300: #3d4858;
+  --color-ink-200: #252e3b;
+  --color-ink-100: #151b24;
+  --color-ink-50:  #0a0d12;
+  --color-accent:     #0891b2;
+  --color-accent-500: #0891b2;
+  --color-accent-600: #0e7490;
+  --color-accent-700: #155e75;
+  --color-accent-900: #cffafe;
+  --color-on-accent: #ffffff;
+}
+
+/* ---------- AMBER ---------- */
+
+[data-theme="amber"][data-mode="dark"] {
+  --color-ink-950: #110d08;
+  --color-ink-900: #18130b;
+  --color-ink-850: #201a10;
+  --color-ink-800: #2a2116;
+  --color-ink-750: #31281c;
+  --color-ink-700: #3d3224;
+  --color-ink-600: #4d4030;
+  --color-ink-500: #6b5a44;
+  --color-ink-400: #8a7660;
+  --color-ink-300: #b4a38e;
+  --color-ink-200: #d4c8b6;
+  --color-ink-100: #ece5da;
+  --color-ink-50:  #f8f4ee;
+  --color-accent:     #ff9f40;
+  --color-accent-500: #ff9f40;
+  --color-accent-600: #e68a2e;
+  --color-accent-700: #b56e1f;
+  --color-accent-900: #4c2e0a;
+  --color-on-accent: #ffffff;
+}
+
+[data-theme="amber"][data-mode="light"] {
+  --color-ink-950: #faf7f2;
+  --color-ink-900: #f3efe8;
+  --color-ink-850: #eae4db;
+  --color-ink-800: #e0d8cd;
+  --color-ink-750: #d4cbbf;
+  --color-ink-700: #c5baa8;
+  --color-ink-600: #ada18c;
+  --color-ink-500: #8f816c;
+  --color-ink-400: #6b5d4c;
+  --color-ink-300: #463c2e;
+  --color-ink-200: #2a2218;
+  --color-ink-100: #18130b;
+  --color-ink-50:  #110d08;
+  --color-accent:     #c2640a;
+  --color-accent-500: #c2640a;
+  --color-accent-600: #a3530a;
+  --color-accent-700: #854310;
+  --color-accent-900: #fef3c7;
+  --color-on-accent: #ffffff;
+}
+
+/* ---------- GRAPHITE ---------- */
+
+[data-theme="graphite"][data-mode="dark"] {
+  --color-ink-950: #0e0e10;
+  --color-ink-900: #141416;
+  --color-ink-850: #1a1a1e;
+  --color-ink-800: #222226;
+  --color-ink-750: #29292e;
+  --color-ink-700: #323238;
+  --color-ink-600: #424248;
+  --color-ink-500: #5c5c64;
+  --color-ink-400: #7c7c86;
+  --color-ink-300: #a4a4ae;
+  --color-ink-200: #c8c8d0;
+  --color-ink-100: #e4e4ea;
+  --color-ink-50:  #f4f4f6;
+  --color-accent:     #e6e6eb;
+  --color-accent-500: #e6e6eb;
+  --color-accent-600: #c8c8d0;
+  --color-accent-700: #a4a4ae;
+  --color-accent-900: #29292e;
+  --color-on-accent: #1a1a1e;
+}
+
+[data-theme="graphite"][data-mode="light"] {
+  --color-ink-950: #f6f6f8;
+  --color-ink-900: #ededf0;
+  --color-ink-850: #e2e2e6;
+  --color-ink-800: #d6d6dc;
+  --color-ink-750: #c8c8d0;
+  --color-ink-700: #b6b6c0;
+  --color-ink-600: #9a9aa6;
+  --color-ink-500: #7c7c88;
+  --color-ink-400: #585864;
+  --color-ink-300: #3a3a44;
+  --color-ink-200: #24242c;
+  --color-ink-100: #161618;
+  --color-ink-50:  #0e0e10;
+  --color-accent:     #3a3a44;
+  --color-accent-500: #3a3a44;
+  --color-accent-600: #2a2a32;
+  --color-accent-700: #1e1e24;
+  --color-accent-900: #ededf0;
+  --color-on-accent: #ffffff;
+}
+
+/* ---------- VIOLET ---------- */
+
+[data-theme="violet"][data-mode="dark"] {
+  --color-ink-950: #0d0a14;
+  --color-ink-900: #120f1c;
+  --color-ink-850: #181526;
+  --color-ink-800: #201c30;
+  --color-ink-750: #272238;
+  --color-ink-700: #312b44;
+  --color-ink-600: #413a56;
+  --color-ink-500: #5c5478;
+  --color-ink-400: #7e74a0;
+  --color-ink-300: #a49abc;
+  --color-ink-200: #c6c0d4;
+  --color-ink-100: #e4e0ee;
+  --color-ink-50:  #f5f3f8;
+  --color-accent:     #a78bfa;
+  --color-accent-500: #a78bfa;
+  --color-accent-600: #8b6fe8;
+  --color-accent-700: #6d4fc0;
+  --color-accent-900: #2e1f5c;
+  --color-on-accent: #ffffff;
+}
+
+[data-theme="violet"][data-mode="light"] {
+  --color-ink-950: #f8f6fc;
+  --color-ink-900: #f0eef6;
+  --color-ink-850: #e6e2f0;
+  --color-ink-800: #dcd6e8;
+  --color-ink-750: #d0c8de;
+  --color-ink-700: #c0b6d2;
+  --color-ink-600: #a69abe;
+  --color-ink-500: #887ca4;
+  --color-ink-400: #645882;
+  --color-ink-300: #44385e;
+  --color-ink-200: #2a2040;
+  --color-ink-100: #18122a;
+  --color-ink-50:  #0d0a14;
+  --color-accent:     #7c3aed;
+  --color-accent-500: #7c3aed;
+  --color-accent-600: #6d28d9;
+  --color-accent-700: #5b21b6;
+  --color-accent-900: #ede9fe;
+  --color-on-accent: #ffffff;
+}
+
+/* ---------- FOREST ---------- */
+
+[data-theme="forest"][data-mode="dark"] {
+  --color-ink-950: #080e0b;
+  --color-ink-900: #0c1610;
+  --color-ink-850: #111e16;
+  --color-ink-800: #18261e;
+  --color-ink-750: #1e2e24;
+  --color-ink-700: #263a2e;
+  --color-ink-600: #324c3c;
+  --color-ink-500: #4a6854;
+  --color-ink-400: #688972;
+  --color-ink-300: #90b49a;
+  --color-ink-200: #b8d4be;
+  --color-ink-100: #dce8de;
+  --color-ink-50:  #f2f6f3;
+  --color-accent:     #6ecc93;
+  --color-accent-500: #6ecc93;
+  --color-accent-600: #52b878;
+  --color-accent-700: #3a9460;
+  --color-accent-900: #143824;
+  --color-on-accent: #ffffff;
+}
+
+[data-theme="forest"][data-mode="light"] {
+  --color-ink-950: #f4f8f5;
+  --color-ink-900: #e8f0ea;
+  --color-ink-850: #dae6dd;
+  --color-ink-800: #ccdad0;
+  --color-ink-750: #bccec2;
+  --color-ink-700: #a8beb0;
+  --color-ink-600: #8aa896;
+  --color-ink-500: #6a8c76;
+  --color-ink-400: #4a6c54;
+  --color-ink-300: #304a38;
+  --color-ink-200: #1c3024;
+  --color-ink-100: #101c14;
+  --color-ink-50:  #080e0b;
+  --color-accent:     #16a34a;
+  --color-accent-500: #16a34a;
+  --color-accent-600: #15803d;
+  --color-accent-700: #166534;
+  --color-accent-900: #dcfce7;
+  --color-on-accent: #ffffff;
+}
+
+/* ---------- PAPER ---------- */
+
+[data-theme="paper"][data-mode="dark"] {
+  --color-ink-950: #100e08;
+  --color-ink-900: #16140c;
+  --color-ink-850: #1e1b12;
+  --color-ink-800: #282418;
+  --color-ink-750: #302c1e;
+  --color-ink-700: #3c3626;
+  --color-ink-600: #4e4632;
+  --color-ink-500: #6c604a;
+  --color-ink-400: #8e8068;
+  --color-ink-300: #b2a48c;
+  --color-ink-200: #d2c6b0;
+  --color-ink-100: #eae2d4;
+  --color-ink-50:  #f6f2ea;
+  --color-accent:     #e2bc7a;
+  --color-accent-500: #e2bc7a;
+  --color-accent-600: #c8a460;
+  --color-accent-700: #a6874a;
+  --color-accent-900: #3e3018;
+  --color-on-accent: #ffffff;
+}
+
+[data-theme="paper"][data-mode="light"] {
+  --color-ink-950: #faf6ee;
+  --color-ink-900: #f2ecdf;
+  --color-ink-850: #e8e0d0;
+  --color-ink-800: #ddd4c2;
+  --color-ink-750: #d0c6b2;
+  --color-ink-700: #c0b49e;
+  --color-ink-600: #a89a80;
+  --color-ink-500: #8c7e64;
+  --color-ink-400: #6c5e46;
+  --color-ink-300: #4a3e2c;
+  --color-ink-200: #2c2418;
+  --color-ink-100: #1a1610;
+  --color-ink-50:  #100e08;
+  --color-accent:     #92660a;
+  --color-accent-500: #92660a;
+  --color-accent-600: #7a5408;
+  --color-accent-700: #624410;
+  --color-accent-900: #fef9c3;
+  --color-on-accent: #ffffff;
+}
+
+/* ---------- Smooth transitions on theme/mode swap ---------- */
+
+html,
+body {
+  transition: background-color 180ms ease, color 180ms ease;
+}

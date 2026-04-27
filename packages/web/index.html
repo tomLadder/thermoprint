@@ -12,14 +12,26 @@
     />
     <script>
       (function() {
-        var t = localStorage.getItem('thermoprint-theme');
-        if (t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)) {
-          document.documentElement.classList.add('dark');
-        }
+        try {
+          var themes = ["cyan","amber","graphite","violet","forest","paper"];
+          var modes  = ["dark","light"];
+          var t = localStorage.getItem("tp.theme.v1") || "cyan";
+          var m = localStorage.getItem("tp.mode.v1")  || "dark";
+          if (themes.indexOf(t) < 0) t = "cyan";
+          if (modes.indexOf(m)  < 0) m = "dark";
+          document.documentElement.setAttribute("data-theme", t);
+          document.documentElement.setAttribute("data-mode",  m);
+          if (m === "dark") document.documentElement.classList.add("dark");
+          // UI scale
+          var s = parseFloat(localStorage.getItem("tp.uiScale.v1") || "1");
+          if (isFinite(s) && s >= 0.8 && s <= 1.4) {
+            document.documentElement.style.setProperty("--ui-scale", String(s));
+          }
+        } catch(e) {}
       })();
     </script>
   </head>
-  <body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
+  <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

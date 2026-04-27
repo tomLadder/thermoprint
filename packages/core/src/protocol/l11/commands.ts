@@ -99,6 +99,46 @@ export function getFirmware(): PrintCommand {
   };
 }
 
+/** Query serial number: 10 FF 20 F2 */
+export function getSerial(): PrintCommand {
+  return {
+    label: "get-serial",
+    data: Uint8Array.from([0x10, 0xff, 0x20, 0xf2]),
+  };
+}
+
+/** Query Bluetooth MAC address: 10 FF 20 F3 */
+export function getMac(): PrintCommand {
+  return {
+    label: "get-mac",
+    data: Uint8Array.from([0x10, 0xff, 0x20, 0xf3]),
+  };
+}
+
+/** Query BT module version: 10 FF 30 10 */
+export function getBtVersion(): PrintCommand {
+  return {
+    label: "get-bt-version",
+    data: Uint8Array.from([0x10, 0xff, 0x30, 0x10]),
+  };
+}
+
+/** Query BT device name: 10 FF 30 11 */
+export function getBtName(): PrintCommand {
+  return {
+    label: "get-bt-name",
+    data: Uint8Array.from([0x10, 0xff, 0x30, 0x11]),
+  };
+}
+
+/** Query print speed: 1F 60 00 */
+export function getSpeed(): PrintCommand {
+  return {
+    label: "get-speed",
+    data: Uint8Array.from([0x1f, 0x60, 0x00]),
+  };
+}
+
 /** Print self-test page: 1F 40 */
 export function selfCheck(): PrintCommand {
   return { label: "self-check", data: Uint8Array.from([0x1f, 0x40]) };
