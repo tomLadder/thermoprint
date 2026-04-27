@@ -16,6 +16,7 @@ import JsBarcode from "jsbarcode";
 import { useEditorV2Store, type BaseElement } from "../../../store/editor-store.ts";
 import {
   downloadLabelAsJson,
+  downloadLibraryAsZip,
   importLabelFromJson,
   type SavedLabel,
 } from "../../../lib/library.ts";
@@ -281,9 +282,9 @@ export function LibraryFlyout({ onClose }: Props) {
   return (
     <div className="fixed inset-x-2 bottom-20 max-h-[80vh] md:max-h-none md:inset-auto md:absolute md:bottom-44 md:left-1/2 md:-translate-x-1/2 md:w-[680px] md:h-[480px] bg-ink-850/95 backdrop-blur-sm border border-white/8 rounded-xl shadow-panel z-40 overflow-hidden flex flex-col">
       {/* Header */}
-      <div className="px-3 py-2 md:py-0 md:h-11 border-b border-white/5 shrink-0">
+      <div className="px-3 py-2 border-b border-white/5 shrink-0 space-y-2">
         {/* Row 1: title + close */}
-        <div className="flex items-center justify-between md:hidden mb-2">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Folder size={16} className="text-accent" />
             <span className="text-ui-md font-semibold text-ink-50">Library</span>
@@ -291,15 +292,9 @@ export function LibraryFlyout({ onClose }: Props) {
           </div>
           <button onClick={onClose} className="text-ink-400 hover:text-ink-100"><X size={15} /></button>
         </div>
-        {/* Row 2 mobile / single row desktop: search + actions */}
-        <div className="flex items-center gap-2 md:h-11">
-          <div className="hidden md:flex items-center gap-2">
-            <Folder size={16} className="text-accent" />
-            <span className="text-ui-md font-semibold text-ink-50">Library</span>
-            <span className="text-ui-xs font-mono tabular-nums text-ink-500 ml-1">{library.labels.length} labels</span>
-          </div>
-          <div className="hidden md:block flex-1" />
-          <div className="flex items-center gap-1.5 h-8 px-2 rounded-md bg-ink-800 border border-white/5 flex-1 md:flex-none md:w-48 min-w-0">
+        {/* Row 2: search + actions */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 h-8 px-2 rounded-md bg-ink-800 border border-white/5 flex-1 min-w-0">
             <Search size={13} className="text-ink-400 shrink-0" />
             <input
               value={query}
@@ -310,11 +305,22 @@ export function LibraryFlyout({ onClose }: Props) {
           </div>
           <button
             onClick={handleImport}
-            className="flex items-center gap-1.5 h-8 px-2 rounded-md bg-ink-800 border border-white/5 text-ink-300 hover:text-ink-100 text-ui-sm shrink-0"
+            className="flex items-center gap-1.5 h-8 px-2.5 rounded-md bg-ink-800 border border-white/5 text-ink-300 hover:text-ink-100 text-ui-sm shrink-0"
             title="Import JSON"
           >
             <Upload size={13} />
+            <span className="hidden md:inline">Import</span>
           </button>
+          {library.labels.length > 0 && (
+            <button
+              onClick={() => downloadLibraryAsZip(library.labels)}
+              className="flex items-center gap-1.5 h-8 px-2.5 rounded-md bg-ink-800 border border-white/5 text-ink-300 hover:text-ink-100 text-ui-sm shrink-0"
+              title="Export all labels as ZIP"
+            >
+              <Download size={13} />
+              <span className="hidden md:inline">Export all</span>
+            </button>
+          )}
           <button
             onClick={() => {
               const dirty = useEditorV2Store.getState().currentLabelDirty;
@@ -330,12 +336,6 @@ export function LibraryFlyout({ onClose }: Props) {
           >
             <Plus size={13} />
             <span className="hidden md:inline">New label</span>
-          </button>
-          <button
-            onClick={onClose}
-            className="hidden md:block text-ink-400 hover:text-ink-100"
-          >
-            <X size={15} />
           </button>
         </div>
       </div>
