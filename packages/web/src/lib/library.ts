@@ -1,3 +1,4 @@
+import { zipSync, strToU8 } from "fflate";
 import type { BaseElement, LabelSize } from "../store/editor-store.ts";
 
 // ---- Types ----
@@ -68,6 +69,39 @@ export function downloadLabelAsJson(label: SavedLabel): void {
   const a = document.createElement("a");
   a.href = url;
   a.download = `${label.name.replace(/[^a-zA-Z0-9_-]/g, "_")}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export function downloadLibraryAsZip(labels: SavedLabel[]): void {
+  const files: Record<string, Uint8Array> = {};
+  const usedNames = new Set<string>();
+
+  for (const label of labels) {
+    let baseName = label.name.replace(/[^a-zA-Z0-9_-]/g, "_");
+    let fileName = baseName;
+    let i = 1;
+    while (usedNames.has(fileName)) {
+      fileName = `${baseName}_${i++}`;
+    }
+    usedNames.add(fileName);
+
+    const data = {
+      name: label.name,
+      label: label.label,
+      elements: label.elements,
+      createdAt: label.createdAt,
+      updatedAt: label.updatedAt,
+    };
+    files[`${fileName}.json`] = strToU8(JSON.stringify(data, null, 2));
+  }
+
+  const zipped = zipSync(files);
+  const blob = new Blob([zipped.buffer as ArrayBuffer], { type: "application/zip" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `thermoprint-library-${new Date().toISOString().slice(0, 10)}.zip`;
   a.click();
   URL.revokeObjectURL(url);
 }
