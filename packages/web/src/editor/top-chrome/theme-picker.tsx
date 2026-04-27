@@ -30,7 +30,6 @@ export function ThemePicker() {
     return () => document.removeEventListener("mousedown", h);
   }, [open]);
 
-  const current = THEMES.find((t) => t.id === theme);
 
   return (
     <div className="relative" ref={ref}>

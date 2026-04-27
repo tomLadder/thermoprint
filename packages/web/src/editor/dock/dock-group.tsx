@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 export function DockGroup({
-  label,
+  label: _label,
   children,
 }: {
   label: string;

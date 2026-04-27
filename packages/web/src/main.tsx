@@ -7,7 +7,7 @@ import "@fontsource/inter/700.css";
 // @ts-expect-error — fontsource variable font CSS import
 import "@fontsource-variable/jetbrains-mono";
 import "./index.css";
-import { App } from "./app.tsx";
+import { App } from "./App.tsx";
 import { useEditorV2Store } from "./store/editor-store.ts";
 
 // Apply saved UI scale before first paint
