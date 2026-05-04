@@ -17,5 +17,8 @@
   "devDependencies": {
     "typescript": "^5.7.0",
     "@types/bun": "latest"
+  },
+  "dependencies": {
+    "fflate": "^0.8.2"
   }
 }

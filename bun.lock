@@ -31,6 +31,9 @@
     "packages/core": {
       "name": "@thermoprint/core",
       "version": "0.1.0",
+      "dependencies": {
+        "fflate": "^0.8.2",
+      },
       "devDependencies": {
         "@types/bun": "latest",
         "typescript": "^5.7.0",
