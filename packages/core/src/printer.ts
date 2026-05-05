@@ -133,11 +133,11 @@ export class Printer {
     image: ImageBitmap1bpp,
     options: PrintOptions = {},
   ): Promise<void> {
+    const copies = options.copies ?? 1;
     const mergedOptions = {
       density: options.density ?? this.profile.defaults.density,
       densityCommand: this.profile.densityCommand,
       paperType: options.paperType ?? this.profile.defaults.paperType,
-      copies: options.copies,
     };
 
     const commands = this.protocol.buildPrintSequence(image, mergedOptions);
@@ -167,37 +167,43 @@ export class Printer {
       bulkOffset += d.length;
     }
 
-    const totalBytes = preambleBytes + bulkPayload.length;
+    const singleCopyBytes = preambleBytes + bulkPayload.length;
+    const totalBytes = singleCopyBytes * copies;
 
-    debugLog("PRINT", `start ${image.width}x${image.height} ${totalBytes}B (preamble=${preambleBytes}B bulk=${bulkPayload.length}B) density=${mergedOptions.density} paper=${mergedOptions.paperType}`);
+    debugLog("PRINT", `start ${image.width}x${image.height} ${totalBytes}B (preamble=${preambleBytes}B bulk=${bulkPayload.length}B) copies=${copies} density=${mergedOptions.density} paper=${mergedOptions.paperType}`);
 
     this._printing = true;
     try {
-      // Send preamble (wakeup, enable, density) — small setup commands
-      if (preambleBytes > 0) {
-        const preamblePayload = new Uint8Array(preambleBytes);
-        let off = 0;
-        for (const d of preamble) {
-          preamblePayload.set(d, off);
-          off += d.length;
+      for (let copy = 0; copy < copies; copy++) {
+        const baseOffset = copy * singleCopyBytes;
+
+        // Send preamble (wakeup, enable, density) — small setup commands
+        if (preambleBytes > 0) {
+          const preamblePayload = new Uint8Array(preambleBytes);
+          let off = 0;
+          for (const d of preamble) {
+            preamblePayload.set(d, off);
+            off += d.length;
+          }
+          await this.flowController.send(preamblePayload);
+          debugLog("PRINT", `copy ${copy + 1}/${copies}: preamble sent, waiting for credits`);
+
+          // Wait for credits to refill — the printer processes the setup commands
+          // and grants credits back. This ensures the bitmap starts with full
+          // credits so data flows continuously without visible gaps.
+          await this.waitForCredits();
         }
-        await this.flowController.send(preamblePayload);
-        debugLog("PRINT", "preamble sent, waiting for credits before bitmap");
 
-        // Wait for credits to refill — the printer processes the setup commands
-        // and grants credits back. This ensures the bitmap starts with full
-        // credits so data flows continuously without visible gaps.
-        await this.waitForCredits();
+        // Send bulk data (bitmap + trailing commands like positionToGap, stop)
+        await this.flowController.send(bulkPayload, (sent) => {
+          this.emit("progress", { bytesSent: baseOffset + preambleBytes + sent, totalBytes });
+        });
+
+        debugLog("PRINT", `copy ${copy + 1}/${copies}: data sent, waiting for result`);
+        await this.waitForPrintResult();
+        debugLog("PRINT", `copy ${copy + 1}/${copies} done`);
       }
-
-      // Send bulk data (bitmap + trailing commands like positionToGap, stop)
-      await this.flowController.send(bulkPayload, (sent) => {
-        this.emit("progress", { bytesSent: preambleBytes + sent, totalBytes });
-      });
-
-      debugLog("PRINT", "data sent, waiting for result");
-      await this.waitForPrintResult();
-      debugLog("PRINT", "done");
+      debugLog("PRINT", "all copies done");
     } finally {
       this._printing = false;
     }
