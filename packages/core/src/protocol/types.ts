@@ -27,6 +27,7 @@ export interface PrinterResponse {
 
 export interface PrintSequenceOptions {
   density?: number;
+  densityCommand?: "density" | "thickness";
   paperType?: "gap" | "continuous";
   copies?: number;
 }

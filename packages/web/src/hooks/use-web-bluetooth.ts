@@ -73,17 +73,14 @@ export function useWebBluetooth() {
         console.warn("[thermoprint] model query failed:", err);
       }
 
-      // Query all device info — each is non-critical, fire sequentially
+      // Query device info — non-critical, skip any that fail or if a print starts
       const infoQueries = [
         ["firmware", "firmware"],
         ["serial", "serial"],
-        ["mac", "mac"],
-        ["btVersion", "bt-version"],
-        ["btName", "bt-name"],
-        ["speed", "speed"],
       ] as const;
       for (const [key, type] of infoQueries) {
         try {
+          if (printer.isPrinting) break;
           const val = await printer.getInfo(type as "firmware" | "serial" | "mac" | "bt-version" | "bt-name" | "speed");
           if (val) {
             store.setState((s) => ({
@@ -91,7 +88,8 @@ export function useWebBluetooth() {
             }));
           }
         } catch {
-          // Non-critical
+          // Non-critical — stop querying on first failure (printer may not support it)
+          break;
         }
       }
     } catch (err) {

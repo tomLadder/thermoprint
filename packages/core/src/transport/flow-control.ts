@@ -11,6 +11,9 @@ export class FlowController {
   private credits: number = 0;
   private readonly options: FlowControlOptions;
   private lastCreditTime: number = Date.now();
+  private sendStartTime: number = 0;
+  private packetsSent: number = 0;
+  private loggedNoCredits: boolean = false;
   private packetSize: number;
 
   constructor(
@@ -29,23 +32,30 @@ export class FlowController {
   grantCredits(count: number): void {
     this.credits += count;
     this.lastCreditTime = Date.now();
-    debugLog("FC", `+${count} credits, total=${this.credits}`);
+    this.loggedNoCredits = false;
+    debugLog("FC", `+${count} credits, total=${this.credits}, @${Date.now() - this.sendStartTime}ms`);
   }
 
   /**
    * Send data through the BLE characteristic with credit-based flow control.
    *
-   * Matches the official Marklife app's timer-based approach: a periodic timer
-   * fires at a fixed interval (e.g. 30ms for P15). On each tick, at most one
-   * packet is sent if credits are available. If credits have been exhausted for
-   * longer than the starvation timeout, one credit is forced unconditionally
-   * (matching the official app's recovery logic).
+   * Matches the official Marklife app exactly: a periodic timer fires at a
+   * fixed interval (e.g. 30ms for P15). On each tick, exactly ONE packet is
+   * sent if credits are available. This pacing is critical — sending faster
+   * overwhelms the printer's BLE stack and it stops granting credits.
+   *
+   * If credits have been exhausted for longer than the starvation timeout,
+   * one credit is forced unconditionally (matching the official app's recovery).
    */
   async send(
     data: Uint8Array,
     onProgress?: (bytesSent: number) => void,
   ): Promise<void> {
     let offset = 0;
+    this.sendStartTime = Date.now();
+    this.lastCreditTime = Date.now();
+    this.packetsSent = 0;
+    this.loggedNoCredits = false;
     debugLog("TX", `sending ${data.length}B in ${Math.ceil(data.length / this.packetSize)} packets, credits=${this.credits}`);
 
     const { packetDelayMs, starvationTimeoutMs } = this.options;
@@ -59,17 +69,14 @@ export class FlowController {
             return;
           }
 
-          // Starvation recovery: force 1 credit unconditionally after timeout,
-          // matching the official app. This keeps data flowing even when BLE
-          // notifications are lost (Web Bluetooth) or the printer is slow to
-          // grant credits.
+          // Starvation recovery
           if (this.credits <= 0 && Date.now() - this.lastCreditTime >= starvationTimeoutMs) {
             debugLog("FC", `starvation recovery, forcing 1 credit`);
             this.credits = 1;
             this.lastCreditTime = Date.now();
           }
 
-          // Send at most one packet per tick (matching official app timer cadence)
+          // Send exactly one packet per tick (matching official app pacing)
           if (this.credits > 0) {
             const remaining = data.length - offset;
             const chunkSize = Math.min(remaining, this.packetSize);
@@ -77,14 +84,21 @@ export class FlowController {
 
             await this.tx.write(chunk, true); // withoutResponse = true
             this.credits--;
+            this.packetsSent++;
             offset += chunkSize;
+
+            debugLog("TX", `pkt#${this.packetsSent} ${chunkSize}B sent=${offset}/${data.length} credits=${this.credits} @${Date.now() - this.sendStartTime}ms`);
 
             onProgress?.(offset);
 
             if (offset >= data.length) {
+              debugLog("TX", `done in ${Date.now() - this.sendStartTime}ms`);
               resolve();
               return;
             }
+          } else if (!this.loggedNoCredits) {
+            this.loggedNoCredits = true;
+            debugLog("FC", `no credits @${Date.now() - this.sendStartTime}ms, pkt#${this.packetsSent}, starvation in ${starvationTimeoutMs - (Date.now() - this.lastCreditTime)}ms`);
           }
 
           setTimeout(tick, tickMs);

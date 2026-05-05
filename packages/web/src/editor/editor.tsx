@@ -97,26 +97,11 @@ export function Editor() {
     const rotatedW = canvas.width;
     const rotatedH = canvas.height;
 
-    // Pad to printWidth if narrower than the print head
-    const printWidth = settings.printWidth;
-    let imageData: RawImageData;
-
-    if (rotatedW < printWidth) {
-      const padded = document.createElement("canvas");
-      padded.width = printWidth;
-      padded.height = rotatedH;
-      const pCtx = padded.getContext("2d")!;
-      pCtx.fillStyle = "#ffffff";
-      pCtx.fillRect(0, 0, printWidth, rotatedH);
-      const offsetX = Math.floor((printWidth - rotatedW) / 2);
-      pCtx.drawImage(canvas, offsetX, 0);
-      const imgData = pCtx.getImageData(0, 0, printWidth, rotatedH);
-      imageData = { data: imgData.data, width: printWidth, height: rotatedH };
-    } else {
-      const ctx = canvas.getContext("2d")!;
-      const imgData = ctx.getImageData(0, 0, rotatedW, rotatedH);
-      imageData = { data: imgData.data, width: rotatedW, height: rotatedH };
-    }
+    // Send at the label's natural pixel size — no padding to print head width.
+    // The printer handles positioning; padding would 4x the data for narrow labels.
+    const ctx = canvas.getContext("2d")!;
+    const imgData = ctx.getImageData(0, 0, rotatedW, rotatedH);
+    const imageData: RawImageData = { data: imgData.data, width: rotatedW, height: rotatedH };
 
     // Listen for real progress events from the printer
     const offProgress = (p: { bytesSent: number; totalBytes: number }) => {
