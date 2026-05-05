@@ -28,6 +28,7 @@ export class Printer {
   private readonly listeners = new Map<string, Set<EventListener<any>>>();
   private flowController: FlowController;
   private disconnecting = false;
+  private _printing = false;
 
   private constructor(
     private readonly connection: BleConnection,
@@ -97,6 +98,13 @@ export class Printer {
     // Subscribe to CX for flow control / MTU
     if (cx) {
       await cx.subscribe((data) => printer.handleCxData(data));
+
+      // Wait for initial credits from the printer before returning.
+      // The printer sends [0x01, N] on CX shortly after connection to grant
+      // initial flow-control credits. Without this, the first print would
+      // start with 0 credits and rely on starvation recovery (1 pkt/sec),
+      // causing partial data to reach the printer before the full bitmap.
+      await printer.waitForInitialCredits();
     }
 
     // Emit disconnected event on unexpected BLE link loss
@@ -127,37 +135,80 @@ export class Printer {
   ): Promise<void> {
     const mergedOptions = {
       density: options.density ?? this.profile.defaults.density,
+      densityCommand: this.profile.densityCommand,
       paperType: options.paperType ?? this.profile.defaults.paperType,
       copies: options.copies,
     };
 
     const commands = this.protocol.buildPrintSequence(image, mergedOptions);
-    const totalBytes = commands.reduce((sum, cmd) => sum + cmd.data.length, 0);
-    let bytesSent = 0;
 
-    debugLog("PRINT", `start ${image.width}x${image.height} ${totalBytes}B density=${mergedOptions.density} paper=${mergedOptions.paperType}`);
-
+    // Split commands into preamble (setup) and bulk (bitmap + trailing).
+    // Send preamble first, then wait for credits to refill before sending
+    // bulk data. This prevents the printer from starting to print with only
+    // a few rows buffered — the thermal head warmup during preamble processing
+    // gives time for credits to replenish so bulk data flows without gaps.
+    const preamble: Uint8Array[] = [];
+    const bulk: Uint8Array[] = [];
+    let seenBulk = false;
     for (const command of commands) {
-      if (command.bulk) {
-        await this.flowController.send(command.data, (sent) => {
-          this.emit("progress", {
-            bytesSent: bytesSent + sent,
-            totalBytes,
-          });
-        });
+      if (command.bulk) seenBulk = true;
+      if (seenBulk) {
+        bulk.push(command.data);
       } else {
-        await this.flowController.send(command.data);
+        preamble.push(command.data);
       }
-      bytesSent += command.data.length;
-      this.emit("progress", { bytesSent, totalBytes });
     }
 
-    debugLog("PRINT", "data sent, waiting for result");
-    await this.waitForPrintResult();
-    debugLog("PRINT", "done");
+    const preambleBytes = preamble.reduce((sum, d) => sum + d.length, 0);
+    const bulkPayload = new Uint8Array(bulk.reduce((sum, d) => sum + d.length, 0));
+    let bulkOffset = 0;
+    for (const d of bulk) {
+      bulkPayload.set(d, bulkOffset);
+      bulkOffset += d.length;
+    }
+
+    const totalBytes = preambleBytes + bulkPayload.length;
+
+    debugLog("PRINT", `start ${image.width}x${image.height} ${totalBytes}B (preamble=${preambleBytes}B bulk=${bulkPayload.length}B) density=${mergedOptions.density} paper=${mergedOptions.paperType}`);
+
+    this._printing = true;
+    try {
+      // Send preamble (wakeup, enable, density) — small setup commands
+      if (preambleBytes > 0) {
+        const preamblePayload = new Uint8Array(preambleBytes);
+        let off = 0;
+        for (const d of preamble) {
+          preamblePayload.set(d, off);
+          off += d.length;
+        }
+        await this.flowController.send(preamblePayload);
+        debugLog("PRINT", "preamble sent, waiting for credits before bitmap");
+
+        // Wait for credits to refill — the printer processes the setup commands
+        // and grants credits back. This ensures the bitmap starts with full
+        // credits so data flows continuously without visible gaps.
+        await this.waitForCredits();
+      }
+
+      // Send bulk data (bitmap + trailing commands like positionToGap, stop)
+      await this.flowController.send(bulkPayload, (sent) => {
+        this.emit("progress", { bytesSent: preambleBytes + sent, totalBytes });
+      });
+
+      debugLog("PRINT", "data sent, waiting for result");
+      await this.waitForPrintResult();
+      debugLog("PRINT", "done");
+    } finally {
+      this._printing = false;
+    }
+  }
+
+  get isPrinting(): boolean {
+    return this._printing;
   }
 
   async getStatus(timeoutMs = 5000): Promise<PrinterStatus> {
+    if (this._printing) throw new ThermoprintError(ErrorCode.PRINT_FAILED, "Cannot query status while printing");
     const cmd = this.protocol.buildStatusQuery();
     await this.flowController.send(cmd.data);
     const response = await this.waitForResponse("status", timeoutMs);
@@ -168,6 +219,7 @@ export class Printer {
   }
 
   async getBattery(): Promise<number> {
+    if (this._printing) throw new ThermoprintError(ErrorCode.PRINT_FAILED, "Cannot query battery while printing");
     const cmd = this.protocol.buildBatteryQuery();
     await this.flowController.send(cmd.data);
     const response = await this.waitForResponse("battery", 3000);
@@ -178,6 +230,7 @@ export class Printer {
   }
 
   async getModel(): Promise<string> {
+    if (this._printing) throw new ThermoprintError(ErrorCode.PRINT_FAILED, "Cannot query model while printing");
     const cmd = this.protocol.buildModelQuery();
     await this.flowController.send(cmd.data);
     const response = await this.waitForResponse("model", 3000);
@@ -186,6 +239,7 @@ export class Printer {
   }
 
   async getInfo(type: "firmware" | "serial" | "mac" | "bt-version" | "bt-name" | "speed"): Promise<string> {
+    if (this._printing) throw new ThermoprintError(ErrorCode.PRINT_FAILED, "Cannot query info while printing");
     const cmd = this.protocol.buildInfoQuery(type);
     await this.flowController.send(cmd.data);
     const response = await this.waitForResponse(type, 3000);
@@ -293,6 +347,51 @@ export class Printer {
     if (idx !== -1) {
       this.pendingResponses.splice(idx, 1)[0].resolve(response);
     }
+  }
+
+  private waitForCredits(minCredits = 3, timeoutMs = 1000): Promise<void> {
+    if (this.flowController.availableCredits >= minCredits) {
+      return Promise.resolve();
+    }
+    return new Promise<void>((resolve) => {
+      const timer = setTimeout(() => {
+        debugLog("FC", `credit wait timeout (have ${this.flowController.availableCredits}, wanted ${minCredits}) — proceeding`);
+        resolve();
+      }, timeoutMs);
+
+      const check = () => {
+        if (this.flowController.availableCredits >= minCredits) {
+          clearTimeout(timer);
+          debugLog("FC", `credits ready: ${this.flowController.availableCredits}`);
+          resolve();
+        } else {
+          setTimeout(check, 20);
+        }
+      };
+      check();
+    });
+  }
+
+  private waitForInitialCredits(timeoutMs = 3000): Promise<void> {
+    if (this.flowController.availableCredits > 0) {
+      return Promise.resolve();
+    }
+    return new Promise<void>((resolve) => {
+      const timer = setTimeout(() => {
+        debugLog("FC", "initial credit timeout — proceeding without credits");
+        resolve();
+      }, timeoutMs);
+
+      const check = () => {
+        if (this.flowController.availableCredits > 0) {
+          clearTimeout(timer);
+          resolve();
+        } else {
+          setTimeout(check, 50);
+        }
+      };
+      check();
+    });
   }
 
   private waitForResponse(type: string, timeoutMs = 5000): Promise<PrinterResponse> {

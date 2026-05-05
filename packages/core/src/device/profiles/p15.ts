@@ -27,6 +27,7 @@ export const p15Profile: DeviceProfile = {
     packetDelayMs: 30,
   },
   defaults: { density: 2, paperType: "gap" },
+  densityCommand: "thickness",
   namePrefixes: [
     "P15",
     "P15R",

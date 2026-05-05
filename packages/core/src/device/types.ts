@@ -24,6 +24,8 @@ export interface DeviceProfile {
   packetSize?: number;
   flowControl: Partial<FlowControlOptions>;
   defaults: { density: number; paperType: "gap" | "continuous" };
+  /** Which command to use for print darkness: "density" (1F 70 02) or "thickness" (10 FF 10 00) */
+  densityCommand?: "density" | "thickness";
   namePrefixes: string[];
   labelConfig?: DeviceLabelConfig;
 }

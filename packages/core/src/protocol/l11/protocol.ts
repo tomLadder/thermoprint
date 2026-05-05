@@ -22,11 +22,15 @@ export class L11Protocol implements PrinterProtocol {
     image: ImageBitmap1bpp,
     options: PrintSequenceOptions = {},
   ): PrintCommand[] {
-    const { density, paperType = "gap" } = options;
+    const { density, densityCommand = "density", paperType = "gap" } = options;
     const commands: PrintCommand[] = [];
 
     if (density !== undefined) {
-      commands.push(cmd.setDensity(density));
+      commands.push(
+        densityCommand === "thickness"
+          ? cmd.setThickness(density)
+          : cmd.setDensity(density),
+      );
     }
     commands.push(cmd.wakeup());
     commands.push(cmd.enable());
