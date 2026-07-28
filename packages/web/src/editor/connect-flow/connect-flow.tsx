@@ -4,7 +4,7 @@ import { useEditorV2Store } from "../../store/editor-store.ts";
 import { usePrinterStore } from "../../store/printer-store.ts";
 import { useWebBluetooth } from "../../hooks/use-web-bluetooth.ts";
 import { getDevice } from "@thermoprint/core";
-import { mmToPx } from "../../utils/px-mm.ts";
+import { labelFromPreset } from "../../label/from-preset.ts";
 
 type Step = "idle" | "scanning" | "pairing" | "connected" | "error";
 
@@ -52,12 +52,7 @@ export function ConnectFlow() {
           const def = lc.defaultSize;
           useEditorV2Store.setState({
             paperType: lc.defaultPaperType,
-            label: {
-              widthMm: def.widthMm,
-              heightMm: def.heightMm,
-              widthPx: mmToPx(def.widthMm),
-              heightPx: mmToPx(def.heightMm),
-            },
+            label: labelFromPreset(def),
             printSettings: {
               ...useEditorV2Store.getState().printSettings,
               density: profile.defaults.density,

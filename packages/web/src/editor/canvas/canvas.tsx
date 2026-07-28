@@ -1,11 +1,13 @@
-import { useRef, useState, useEffect, useCallback, useLayoutEffect, forwardRef } from "react";
+import { useRef, useState, useEffect, useCallback, useLayoutEffect, forwardRef, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Stage, Layer, Rect } from "react-konva";
+import { Stage, Layer, Group, Rect } from "react-konva";
 import type Konva from "konva";
 import { useEditorV2Store, type BaseElement } from "../../store/editor-store.ts";
 import { mmToPx } from "../../utils/px-mm.ts";
 import { usePrinterStore } from "../../store/printer-store.ts";
 import { getLabelSizes } from "../../label/label-sizes.ts";
+import { labelFromPreset } from "../../label/from-preset.ts";
+import { getStockPx } from "../../label/cable-stock.ts";
 import { ChevronDown } from "lucide-react";
 import { LabelPaper } from "./label-paper.tsx";
 import { TextElement } from "./elements/text-element.tsx";
@@ -45,9 +47,9 @@ function LabelSizeSelector({
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  const setSize = (widthMm: number, heightMm: number) => {
+  const setSize = (widthMm: number, heightMm: number, name?: string, cable?: { panelMm: number; tailMm: number }) => {
     useEditorV2Store.setState({
-      label: { widthMm, heightMm, widthPx: mmToPx(widthMm), heightPx: mmToPx(heightMm) },
+      label: labelFromPreset({ widthMm, heightMm, name, cable }),
     });
     setOpen(false);
   };
@@ -71,7 +73,7 @@ function LabelSizeSelector({
             : "bg-ink-850/95 border-white/8 text-ink-200 hover:border-accent/30 hover:text-accent shadow-panel"
         }`}
       >
-        {label.widthMm} × {label.heightMm} mm
+        {label.name ?? `${label.widthMm} × ${label.heightMm} mm`}
         <ChevronDown size={13} className={open ? "rotate-180" : ""} style={{ transition: "transform 150ms ease" }} />
       </button>
       {paperType === "gap" && (
@@ -106,14 +108,17 @@ function LabelSizeSelector({
         </button>
       )}
       {open && (
-        <div className="absolute left-1/2 -translate-x-1/2 mt-1 w-40 bg-ink-850/95 backdrop-blur-sm border border-white/8 rounded-lg shadow-panel overflow-hidden z-40">
+        <div className="absolute left-1/2 -translate-x-1/2 mt-1 w-56 bg-ink-850/95 backdrop-blur-sm border border-white/8 rounded-lg shadow-panel overflow-hidden z-40">
           <div className="max-h-52 overflow-y-auto py-1">
             {sizes.map((s) => {
-              const active = s.widthMm === label.widthMm && s.heightMm === label.heightMm;
+              const active =
+                s.widthMm === label.widthMm &&
+                s.heightMm === label.heightMm &&
+                !!s.cable === !!label.cable;
               return (
                 <button
-                  key={`${s.widthMm}x${s.heightMm}`}
-                  onClick={() => setSize(s.widthMm, s.heightMm)}
+                  key={s.cable ? `cable-${s.widthMm}x${s.heightMm}` : `${s.widthMm}x${s.heightMm}`}
+                  onClick={() => setSize(s.widthMm, s.heightMm, s.name, s.cable)}
                   className={`w-full flex items-center px-3 h-7 text-ui-sm font-mono hover-fade ${
                     active
                       ? "text-accent bg-accent/10"
@@ -200,17 +205,22 @@ export const Canvas = forwardRef<Konva.Stage>(function Canvas(_props, ref) {
     return () => ro.disconnect();
   }, []);
 
+  const stock = useMemo(() => getStockPx(label), [label]);
+  const stockWidthMm = label.cable
+    ? label.cable.panelMm * 2 + label.cable.tailMm
+    : label.widthMm;
+
   // Fit to screen on mount and when label changes (new label, open label)
   const currentLabelId = useEditorV2Store((s) => s.currentLabelId);
   useEffect(() => {
     const pad = window.innerWidth < 768 ? 80 : 200;
-    const fitW = (size.w - pad) / label.widthPx;
-    const fitH = (size.h - pad) / label.heightPx;
+    const fitW = (size.w - pad) / stock.widthPx;
+    const fitH = (size.h - pad) / stock.heightPx;
     const fit = Math.max(0.5, Math.min(4, Math.min(fitW, fitH)));
     setZoom(fit);
     setPan(0, 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentLabelId, label.widthPx, label.heightPx]);
+  }, [currentLabelId, stock.widthPx, stock.heightPx]);
 
   // Space key tracking for pan mode
   useEffect(() => {
@@ -245,9 +255,9 @@ export const Canvas = forwardRef<Konva.Stage>(function Canvas(_props, ref) {
     return () => el.removeEventListener("wheel", onWheel);
   }, [setZoom]);
 
-  // Compute label position centered in viewport
-  const displayW = label.widthPx * zoom;
-  const displayH = label.heightPx * zoom;
+  // Compute stock position centered in viewport (full cable silhouette when applicable)
+  const displayW = stock.widthPx * zoom;
+  const displayH = stock.heightPx * zoom;
   const originX = size.w / 2 + panX - displayW / 2;
   const originY = size.h / 2 + panY - displayH / 2;
 
@@ -476,8 +486,20 @@ export const Canvas = forwardRef<Konva.Stage>(function Canvas(_props, ref) {
           scaleY={zoom}
         >
           <LabelPaper />
+          {/* Editable design panel */}
           {elements.map((el) =>
             renderElement(el, selectedIds.includes(el.id)),
+          )}
+          {/* Live mirror on the second printable panel (cable labels only) */}
+          {label.cable && (
+            <Group x={stock.panelPx} opacity={0.45} listening={false}>
+              {elements.map((el) =>
+                renderElement(
+                  { ...el, id: `mirror-${el.id}` },
+                  false,
+                ),
+              )}
+            </Group>
           )}
         </Layer>
       </Stage>
@@ -509,7 +531,7 @@ export const Canvas = forwardRef<Konva.Stage>(function Canvas(_props, ref) {
               style={{ backdropFilter: "blur(4px)" }}
             >
               <div className="relative w-full h-full">
-                {Array.from({ length: Math.ceil(label.widthMm) + 1 }).map((_, mm) => {
+                {Array.from({ length: Math.ceil(stockWidthMm) + 1 }).map((_, mm) => {
                   const x = originX + mm * pxPerMm * zoom;
                   if (x < 0 || x > size.w) return null;
                   const major = mm % 5 === 0;

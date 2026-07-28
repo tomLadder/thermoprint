@@ -35,6 +35,7 @@ export type {
   DeviceProfile,
   DeviceLabelConfig,
   LabelSizePreset,
+  CableLabelLayout,
   PrintOptions,
   PrinterStatus,
   PrinterEventMap,

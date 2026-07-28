@@ -398,8 +398,9 @@ export function LibraryFlyout({ onClose }: Props) {
                       </div>
                       <div className="flex items-center justify-between mt-1 text-ui-xs font-mono text-ink-400">
                         <span className="tabular-nums">
-                          {item.label.widthMm}x{item.label.heightMm}mm ·{" "}
-                          {item.elements.length} el
+                          {item.label.name ??
+                            `${item.label.widthMm}x${item.label.heightMm}mm`}{" "}
+                          · {item.elements.length} el
                         </span>
                         <span>{relTime(item.updatedAt)}</span>
                       </div>
