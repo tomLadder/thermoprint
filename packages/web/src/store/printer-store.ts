@@ -3,7 +3,7 @@ import type { BlePeripheral, PrinterStatus } from "@thermoprint/core";
 import { getDevice } from "@thermoprint/core";
 import type { PrintSettings } from "./types.ts";
 import { useEditorStore } from "./editor-store.ts";
-import { mmToPx } from "../utils/px-mm.ts";
+import { labelFromPreset } from "../label/from-preset.ts";
 
 interface PrinterState {
   peripheral: BlePeripheral | null;
@@ -53,9 +53,8 @@ export function applyModelDefaults(modelId: string): void {
     paperType: lc.defaultPaperType,
   });
 
-  const { widthMm, heightMm } = lc.defaultSize;
   useEditorStore.setState({
-    label: { widthMm, heightMm, widthPx: mmToPx(widthMm), heightPx: mmToPx(heightMm) },
+    label: labelFromPreset(lc.defaultSize),
   });
 }
 

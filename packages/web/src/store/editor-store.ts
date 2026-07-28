@@ -34,6 +34,10 @@ export interface LabelSize {
   heightMm: number;
   widthPx: number;
   heightPx: number;
+  /** Optional display name (e.g. cable formats). */
+  name?: string;
+  /** When set, print duplicates the design panel side-by-side. */
+  cable?: { panelMm: number; tailMm: number };
 }
 
 // ---- State shape ----

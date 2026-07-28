@@ -13,7 +13,7 @@ export function StatusBar() {
     <div className="hidden md:flex absolute bottom-0 left-0 right-0 h-6 px-3 items-center justify-between text-ui-xs font-mono text-ink-500 bg-ink-900/80 border-t border-white/5 backdrop-blur-sm z-10">
       <div className="flex items-center gap-4">
         <span>
-          {label.widthMm}×{label.heightMm}mm
+          {label.name ?? `${label.widthMm}×${label.heightMm}mm`}
         </span>
         <span>{paperType === "gap" ? "GAP" : "CONT"}</span>
         <span>{elements.length} elements</span>

@@ -1,10 +1,19 @@
 import { getDevice } from "@thermoprint/core";
+import type { CableLabelLayout } from "@thermoprint/core";
 
 export interface LabelSize {
   name: string;
   widthMm: number;
   heightMm: number;
+  cable?: CableLabelLayout;
 }
+
+const CABLE_37_37_35: LabelSize = {
+  name: "109 × 12.5 mm Cable",
+  widthMm: 37,
+  heightMm: 12.5,
+  cable: { panelMm: 37, tailMm: 35 },
+};
 
 const FALLBACK_SIZES: LabelSize[] = [
   { name: "40 × 12 mm", widthMm: 40, heightMm: 12 },
@@ -12,6 +21,7 @@ const FALLBACK_SIZES: LabelSize[] = [
   { name: "40 × 30 mm", widthMm: 40, heightMm: 30 },
   { name: "40 × 40 mm", widthMm: 40, heightMm: 40 },
   { name: "40 × 60 mm", widthMm: 40, heightMm: 60 },
+  CABLE_37_37_35,
   { name: "50 × 15 mm", widthMm: 50, heightMm: 15 },
   { name: "50 × 25 mm", widthMm: 50, heightMm: 25 },
   { name: "50 × 30 mm", widthMm: 50, heightMm: 30 },
@@ -30,8 +40,9 @@ export function getLabelSizes(
       : profile?.labelConfig?.continuousSizes;
   if (!presets?.length) return FALLBACK_SIZES;
   return presets.map((p) => ({
-    name: `${p.widthMm} × ${p.heightMm} mm`,
+    name: p.name ?? `${p.widthMm} × ${p.heightMm} mm`,
     widthMm: p.widthMm,
     heightMm: p.heightMm,
+    ...(p.cable ? { cable: p.cable } : {}),
   }));
 }

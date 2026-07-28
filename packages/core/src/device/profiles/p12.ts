@@ -7,6 +7,12 @@ const gapSizes: LabelSizePreset[] = [
   { widthMm: 30, heightMm: 12 },
   { widthMm: 30, heightMm: 14 },
   { widthMm: 30, heightMm: 15 },
+  {
+    widthMm: 37,
+    heightMm: 12.5,
+    name: "109 × 12.5 mm Cable",
+    cable: { panelMm: 37, tailMm: 35 },
+  },
   { widthMm: 40, heightMm: 12 },
   { widthMm: 40, heightMm: 14 },
   { widthMm: 40, heightMm: 15 },

@@ -3,9 +3,21 @@ export interface FlowControlOptions {
   packetDelayMs: number;
 }
 
+/** Layout for flag-style cable labels (two printable panels + wrap tail). */
+export interface CableLabelLayout {
+  /** Width of each printable panel in mm. */
+  panelMm: number;
+  /** Non-printable wrap-tail width in mm. */
+  tailMm: number;
+}
+
 export interface LabelSizePreset {
   widthMm: number;
   heightMm: number;
+  /** Optional display name; defaults to "W × H mm". */
+  name?: string;
+  /** When set, editor designs one panel; print duplicates it side-by-side. */
+  cable?: CableLabelLayout;
 }
 
 export interface DeviceLabelConfig {

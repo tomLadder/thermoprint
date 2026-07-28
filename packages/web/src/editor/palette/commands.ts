@@ -20,7 +20,8 @@ import {
   LayoutTemplate,
 } from "lucide-react";
 import { useEditorV2Store } from "../../store/editor-store.ts";
-import { mmToPx } from "../../utils/px-mm.ts";
+import { labelFromPreset, labelFromMm } from "../../label/from-preset.ts";
+import { getStockPx } from "../../label/cable-stock.ts";
 import {
   addTextEl,
   addQrEl,
@@ -41,11 +42,12 @@ export interface Command {
 
 function fitToScreen() {
   const { label } = useEditorV2Store.getState();
+  const stock = getStockPx(label);
   const cw = window.innerWidth - 160;
   const ch = window.innerHeight - 200;
   const fit = Math.max(
     0.5,
-    Math.min(4, Math.min(cw / label.widthPx, ch / label.heightPx)),
+    Math.min(4, Math.min(cw / stock.widthPx, ch / stock.heightPx)),
   );
   useEditorV2Store.getState().setZoom(fit);
   useEditorV2Store.getState().setPan(0, 0);
@@ -53,12 +55,18 @@ function fitToScreen() {
 
 function setLabelSize(widthMm: number, heightMm: number) {
   useEditorV2Store.setState({
-    label: {
-      widthMm,
-      heightMm,
-      widthPx: mmToPx(widthMm),
-      heightPx: mmToPx(heightMm),
-    },
+    label: labelFromMm(widthMm, heightMm),
+  });
+}
+
+function setCableLabel() {
+  useEditorV2Store.setState({
+    label: labelFromPreset({
+      widthMm: 37,
+      heightMm: 12.5,
+      name: "109 × 12.5 mm Cable",
+      cable: { panelMm: 37, tailMm: 35 },
+    }),
   });
 }
 
@@ -132,6 +140,7 @@ export const commands: Command[] = [
   { id: "label-50x30", label: "Set label size · 50 × 30 mm", group: "Label", icon: Square, run: () => setLabelSize(50, 30) },
   { id: "label-40x12", label: "Set label size · 40 × 12 mm", group: "Label", icon: Square, run: () => setLabelSize(40, 12) },
   { id: "label-40x30", label: "Set label size · 40 × 30 mm", group: "Label", icon: Square, run: () => setLabelSize(40, 30) },
+  { id: "label-cable", label: "Set label size · 109 × 12.5 mm Cable", group: "Label", icon: Square, run: () => setCableLabel() },
   { id: "label-70x40", label: "Set label size · 70 × 40 mm", group: "Label", icon: Square, run: () => setLabelSize(70, 40) },
   { id: "label-50x50", label: "Set label size · 50 × 50 mm", group: "Label", icon: Square, run: () => setLabelSize(50, 50) },
 

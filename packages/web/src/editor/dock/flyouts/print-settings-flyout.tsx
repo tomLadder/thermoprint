@@ -2,13 +2,19 @@ import { Settings, X } from "lucide-react";
 import { useEditorV2Store } from "../../../store/editor-store.ts";
 import { usePrinterStore } from "../../../store/printer-store.ts";
 import { getDevice, type LabelSizePreset } from "@thermoprint/core";
-import { mmToPx } from "../../../utils/px-mm.ts";
+import { labelFromPreset } from "../../../label/from-preset.ts";
 
 // Fallback sizes when no printer is connected
 const FALLBACK_GAP_SIZES: LabelSizePreset[] = [
   { widthMm: 22, heightMm: 12 },
   { widthMm: 30, heightMm: 12 },
   { widthMm: 30, heightMm: 15 },
+  {
+    widthMm: 37,
+    heightMm: 12.5,
+    name: "109 × 12.5 mm Cable",
+    cable: { panelMm: 37, tailMm: 35 },
+  },
   { widthMm: 40, heightMm: 12 },
   { widthMm: 40, heightMm: 15 },
   { widthMm: 50, heightMm: 15 },
@@ -88,31 +94,23 @@ export function PrintSettingsFlyout({ onClose }: Props) {
     // If current label size isn't valid for the new paper type, switch to the first valid size
     const sizes = sizesForPaperType(pt);
     const currentValid = sizes.some(
-      (s) => s.widthMm === label.widthMm && s.heightMm === label.heightMm,
+      (s) =>
+        s.widthMm === label.widthMm &&
+        s.heightMm === label.heightMm &&
+        !!s.cable === !!label.cable,
     );
     if (!currentValid && sizes.length > 0) {
-      const def = sizes[0];
       useEditorV2Store.setState({
-        label: {
-          widthMm: def.widthMm,
-          heightMm: def.heightMm,
-          widthPx: mmToPx(def.widthMm),
-          heightPx: mmToPx(def.heightMm),
-        },
+        label: labelFromPreset(sizes[0]),
       });
     }
     // Also sync to old printer store
     usePrinterStore.getState().updateSettings({ paperType: pt });
   };
 
-  const setLabelSize = (widthMm: number, heightMm: number) => {
+  const setLabelSize = (preset: LabelSizePreset) => {
     useEditorV2Store.setState({
-      label: {
-        widthMm,
-        heightMm,
-        widthPx: mmToPx(widthMm),
-        heightPx: mmToPx(heightMm),
-      },
+      label: labelFromPreset(preset),
     });
   };
 
@@ -258,18 +256,22 @@ export function PrintSettingsFlyout({ onClose }: Props) {
           <div className="grid grid-cols-2 gap-1">
             {availableSizes.map((s) => {
               const active =
-                s.widthMm === label.widthMm && s.heightMm === label.heightMm;
+                s.widthMm === label.widthMm &&
+                s.heightMm === label.heightMm &&
+                !!s.cable === !!label.cable;
               return (
                 <button
-                  key={`${s.widthMm}x${s.heightMm}`}
-                  onClick={() => setLabelSize(s.widthMm, s.heightMm)}
-                  className={`h-7 rounded-md text-ui-xs font-mono border ${
+                  key={s.cable ? `cable-${s.widthMm}x${s.heightMm}` : `${s.widthMm}x${s.heightMm}`}
+                  onClick={() => setLabelSize(s)}
+                  className={`min-h-7 px-1.5 rounded-md text-ui-xs font-mono border ${
+                    s.cable ? "col-span-2 py-1.5" : "h-7"
+                  } ${
                     active
                       ? "bg-accent/10 text-accent border-accent/30"
                       : "bg-ink-800 text-ink-300 border-white/5 hover:text-ink-100 hover:bg-ink-750"
                   }`}
                 >
-                  {s.widthMm} × {s.heightMm} mm
+                  {s.name ?? `${s.widthMm} × ${s.heightMm} mm`}
                 </button>
               );
             })}
@@ -355,7 +357,7 @@ export function PrintSettingsFlyout({ onClose }: Props) {
           <div className="flex items-center justify-between mt-1">
             <span className="text-ink-400">Current label</span>
             <span className="text-ink-100 font-mono">
-              {label.widthMm} × {label.heightMm} mm · {paperType}
+              {label.name ?? `${label.widthMm} × ${label.heightMm} mm`} · {paperType}
             </span>
           </div>
         </div>

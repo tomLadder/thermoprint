@@ -56,6 +56,8 @@ export interface LabelConfig {
   heightMm: number;
   widthPx: number;
   heightPx: number;
+  name?: string;
+  cable?: { panelMm: number; tailMm: number };
 }
 
 export interface PrintSettings {

@@ -12,6 +12,7 @@ import { useKeyboardShortcuts, setPrintFn } from "../lib/keyboard.ts";
 import { useEditorV2Store } from "../store/editor-store.ts";
 import { getPrinter } from "../hooks/use-web-bluetooth.ts";
 import type { RawImageData } from "@thermoprint/core";
+import { composeCableLabel } from "../label/compose-cable-label.ts";
 
 function captureLabel(
   stage: Konva.Stage,
@@ -90,7 +91,10 @@ export function Editor() {
     await new Promise((r) => requestAnimationFrame(r));
 
     // Capture the label region at 1:1 pixel resolution
-    const raw = captureLabel(stage, label.widthPx, label.heightPx);
+    let raw = captureLabel(stage, label.widthPx, label.heightPx);
+    if (label.cable) {
+      raw = composeCableLabel(raw);
+    }
     const canvas = rotateCanvas90CW(raw);
     const rotatedW = canvas.width;
     const rotatedH = canvas.height;
