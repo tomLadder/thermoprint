@@ -31,7 +31,7 @@ export const m60Profile: DeviceProfile = {
     packetDelayMs: 1,
   },
   defaults: { density: 2, paperType: "gap" },
-  namePrefixes: ["M60", "X2"],
+  namePrefixes: ["M60"],
   labelConfig: {
     supportedPaperTypes: ["gap", "continuous"],
     defaultPaperType: "gap",
@@ -39,4 +39,13 @@ export const m60Profile: DeviceProfile = {
     continuousSizes,
     defaultSize: { widthMm: 50, heightMm: 30 },
   },
+};
+
+/** X2 shares the M60 transport/protocol but requires different raster encoding. */
+export const x2Profile: DeviceProfile = {
+  ...m60Profile,
+  modelId: "x2",
+  namePrefixes: ["X2"],
+  rotateRaster90CW: false,
+  compressionWindowBits: 10,
 };
