@@ -1,4 +1,5 @@
 import { zlibSync } from "fflate";
+import { deflate } from "pako";
 import type { ImageBitmap1bpp, PrintCommand } from "../types.js";
 
 /** 6 zero bytes to wake the printer */
@@ -63,11 +64,22 @@ export function printerLocation(x: number, y: number): PrintCommand {
 
 /**
  * Build a compressed bitmap command: 1F 10 <wh> <wl> <hh> <hl> <len4> + zlib data
- * Compression: standard zlib compress() with default parameters (level 6).
+ * X2 uses the vendor's 1 KiB zlib window; callers without an override retain
+ * the existing fflate level-6 behavior for M60 compatibility.
  */
-export function printBitmap(image: ImageBitmap1bpp): PrintCommand {
+export function printBitmap(
+  image: ImageBitmap1bpp,
+  compressionWindowBits?: number,
+): PrintCommand {
   const { data: pixels, bytesPerRow, height } = image;
-  const compressed = zlibSync(pixels, { level: 6 });
+  const compressed = compressionWindowBits === undefined
+    ? zlibSync(pixels, { level: 6 })
+    : deflate(pixels, {
+        level: -1,
+        windowBits: compressionWindowBits,
+        memLevel: 8,
+        strategy: 0,
+      });
 
   const header = Uint8Array.from([
     0x1f,

@@ -15,10 +15,12 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "typescript": "^5.7.0",
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/pako": "^2.0.4",
+    "typescript": "^5.7.0"
   },
   "dependencies": {
-    "fflate": "^0.8.2"
+    "fflate": "^0.8.2",
+    "pako": "^3.0.1"
   }
 }

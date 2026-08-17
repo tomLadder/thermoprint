@@ -10,8 +10,10 @@ import { Palette } from "./palette/palette.tsx";
 import { ConnectFlow } from "./connect-flow/connect-flow.tsx";
 import { useKeyboardShortcuts, setPrintFn } from "../lib/keyboard.ts";
 import { useEditorV2Store } from "../store/editor-store.ts";
+import { usePrinterStore } from "../store/printer-store.ts";
 import { getPrinter } from "../hooks/use-web-bluetooth.ts";
-import type { RawImageData } from "@thermoprint/core";
+import { mmToPx } from "../utils/px-mm.ts";
+import { getDevice, type RawImageData } from "@thermoprint/core";
 
 function captureLabel(
   stage: Konva.Stage,
@@ -24,24 +26,31 @@ function captureLabel(
   const origStageH = stage.height();
   const origLayerX = layer.x();
   const origLayerY = layer.y();
-  const displayScale = layer.scaleX();
+  const origScaleX = layer.scaleX();
+  const origScaleY = layer.scaleY();
 
-  const displayW = widthPx * displayScale;
-  const displayH = heightPx * displayScale;
-
-  // Temporarily resize so toCanvas captures only the label
-  stage.width(displayW);
-  stage.height(displayH);
+  stage.width(widthPx);
+  stage.height(heightPx);
   layer.x(0);
   layer.y(0);
+  layer.scaleX(1);
+  layer.scaleY(1);
 
-  const canvas = stage.toCanvas({ pixelRatio: 1 / displayScale });
+  const canvas = stage.toCanvas({
+    x: 0,
+    y: 0,
+    width: widthPx,
+    height: heightPx,
+    pixelRatio: 1,
+  });
 
   // Restore
   stage.width(origStageW);
   stage.height(origStageH);
   layer.x(origLayerX);
   layer.y(origLayerY);
+  layer.scaleX(origScaleX);
+  layer.scaleY(origScaleY);
   stage.batchDraw();
 
   return canvas;
@@ -89,17 +98,32 @@ export function Editor() {
     // Wait a frame for Konva to re-render without selection handles
     await new Promise((r) => requestAnimationFrame(r));
 
-    // Capture the label region at 1:1 pixel resolution
-    const raw = captureLabel(stage, label.widthPx, label.heightPx);
-    const canvas = rotateCanvas90CW(raw);
-    const rotatedW = canvas.width;
-    const rotatedH = canvas.height;
+    const widthDots = mmToPx(label.widthMm);
+    const heightDots = mmToPx(label.heightMm);
+    const raw = captureLabel(stage, widthDots, heightDots);
+    if (raw.width !== widthDots || raw.height !== heightDots) {
+      throw new Error(
+        `Raster size mismatch: expected ${widthDots}×${heightDots}, got ${raw.width}×${raw.height}`,
+      );
+    }
+
+    const modelId = usePrinterStore.getState().modelId;
+    const profile = modelId ? getDevice(modelId) : null;
+    const canvas = profile?.rotateRaster90CW === false
+      ? raw
+      : rotateCanvas90CW(raw);
+    const outputWidth = canvas.width;
+    const outputHeight = canvas.height;
 
     // Send at the label's natural pixel size — no padding to print head width.
     // The printer handles positioning; padding would 4x the data for narrow labels.
     const ctx = canvas.getContext("2d")!;
-    const imgData = ctx.getImageData(0, 0, rotatedW, rotatedH);
-    const imageData: RawImageData = { data: imgData.data, width: rotatedW, height: rotatedH };
+    const imgData = ctx.getImageData(0, 0, outputWidth, outputHeight);
+    const imageData: RawImageData = {
+      data: imgData.data,
+      width: outputWidth,
+      height: outputHeight,
+    };
 
     // Listen for real progress events from the printer
     const offProgress = (p: { bytesSent: number; totalBytes: number }) => {

@@ -22,7 +22,7 @@ export class X2Protocol implements PrinterProtocol {
     image: ImageBitmap1bpp,
     options: PrintSequenceOptions = {},
   ): PrintCommand[] {
-    const { density, paperType = "gap" } = options;
+    const { density, paperType = "gap", compressionWindowBits } = options;
     const commands: PrintCommand[] = [];
 
     if (paperType === "gap") {
@@ -42,7 +42,7 @@ export class X2Protocol implements PrinterProtocol {
       commands.push(cmd.feedDots(100));
     }
 
-    commands.push(cmd.printBitmap(image));
+    commands.push(cmd.printBitmap(image, compressionWindowBits));
 
     if (paperType === "gap") {
       commands.push(cmd.printerLocation(0x20, 0x00));

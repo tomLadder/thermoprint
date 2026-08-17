@@ -29,6 +29,7 @@ export interface PrintSequenceOptions {
   density?: number;
   densityCommand?: "density" | "thickness";
   paperType?: "gap" | "continuous";
+  compressionWindowBits?: number;
 }
 
 export interface ImageBitmap1bpp {
