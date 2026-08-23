@@ -50,7 +50,11 @@ export function Inspector() {
 
   const el: BaseElement | null = selected.length === 1 ? selected[0] : null;
   const TypeIcon = el ? TYPE_ICONS[el.type] : null;
-  const typeLabel = el ? TYPE_LABELS[el.type] : null;
+  const typeLabel = el
+    ? el.type === "text" && (el.props as { fixedBox?: boolean }).fixedBox
+      ? "Text Box"
+      : TYPE_LABELS[el.type]
+    : null;
 
   return (
     <div
