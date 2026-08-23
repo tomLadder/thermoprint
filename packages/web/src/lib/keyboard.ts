@@ -16,10 +16,10 @@ function addTextBoxEl() {
   addElement({
     id: uid(),
     type: "text",
-    x: Math.round(label.widthPx / 2 - 70),
-    y: Math.round(label.heightPx / 2 - 18),
-    width: 140,
-    height: 36,
+    x: 8,
+    y: 4,
+    width: Math.max(5, label.widthPx - 16),
+    height: Math.max(5, label.heightPx - 8),
     rotation: 0,
     props: {
       text: "Text Box",
@@ -30,6 +30,7 @@ function addTextBoxEl() {
       letterSpacing: 0,
       fill: "#000000",
       align: "center",
+      verticalAlign: "middle",
       italic: false,
     },
   });

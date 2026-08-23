@@ -4,6 +4,9 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  AlignVerticalJustifyStart,
+  AlignVerticalJustifyCenter,
+  AlignVerticalJustifyEnd,
 } from "lucide-react";
 import type { BaseElement } from "../../../store/editor-store.ts";
 import { useEditorV2Store } from "../../../store/editor-store.ts";
@@ -33,6 +36,8 @@ export function TextSection({ element }: Props) {
     letterSpacing?: number;
     fill?: string;
     align?: string;
+    verticalAlign?: string;
+    fixedBox?: boolean;
     italic?: boolean;
   };
 
@@ -99,23 +104,69 @@ export function TextSection({ element }: Props) {
           <SegBtn
             active={p.align === "left"}
             onClick={() => update({ align: "left" })}
+            title="Align left"
           >
             <AlignLeft size={14} />
           </SegBtn>
           <SegBtn
             active={p.align === "center"}
             onClick={() => update({ align: "center" })}
+            title="Center horizontally"
           >
             <AlignCenter size={14} />
           </SegBtn>
           <SegBtn
             active={p.align === "right"}
             onClick={() => update({ align: "right" })}
+            title="Align right"
           >
             <AlignRight size={14} />
           </SegBtn>
         </SegGroup>
+        {p.fixedBox && (
+          <SegGroup>
+            <SegBtn
+              active={(p.verticalAlign || "middle") === "top"}
+              onClick={() => update({ verticalAlign: "top" })}
+              title="Align top"
+            >
+              <AlignVerticalJustifyStart size={14} />
+            </SegBtn>
+            <SegBtn
+              active={(p.verticalAlign || "middle") === "middle"}
+              onClick={() => update({ verticalAlign: "middle" })}
+              title="Center vertically"
+            >
+              <AlignVerticalJustifyCenter size={14} />
+            </SegBtn>
+            <SegBtn
+              active={(p.verticalAlign || "middle") === "bottom"}
+              onClick={() => update({ verticalAlign: "bottom" })}
+              title="Align bottom"
+            >
+              <AlignVerticalJustifyEnd size={14} />
+            </SegBtn>
+          </SegGroup>
+        )}
       </div>
+      {p.fixedBox && (
+        <button
+          type="button"
+          onClick={() => {
+            const { label } = useEditorV2Store.getState();
+            updateElement(element.id, {
+              x: 8,
+              y: 4,
+              width: Math.max(5, label.widthPx - 16),
+              height: Math.max(5, label.heightPx - 8),
+              rotation: 0,
+            });
+          }}
+          className="mt-1.5 w-full h-7 rounded-md bg-ink-800 border border-white/5 text-ui-xs text-ink-300 hover:text-ink-100 hover:border-accent/40"
+        >
+          Max Box
+        </button>
+      )}
       <div className="mt-1.5">
         <Field label="Color">
           <ColorInput

@@ -26,6 +26,7 @@ export function TextBoxElement({ element, isSelected }: Props) {
     letterSpacing?: number;
     fill?: string;
     align?: string;
+    verticalAlign?: string;
     italic?: boolean;
   };
 
@@ -129,7 +130,8 @@ export function TextBoxElement({ element, isSelected }: Props) {
         fontStyle={fontStyle}
         letterSpacing={p.letterSpacing || 0}
         fill={p.fill || "#000000"}
-        align={(p.align as "left" | "center" | "right") || "left"}
+        align={(p.align as "left" | "center" | "right") || "center"}
+        verticalAlign={(p.verticalAlign as "top" | "middle" | "bottom") || "middle"}
         wrap="word"
         draggable={!isEditing}
         onClick={() => selectOnly([element.id])}
