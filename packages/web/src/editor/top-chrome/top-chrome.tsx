@@ -8,6 +8,7 @@ import {
   Grid3x3,
   Ruler,
   Heart,
+  Download,
 } from "lucide-react";
 import { useEditorV2Store } from "../../store/editor-store.ts";
 import { PrintButton } from "./print-button.tsx";
@@ -18,9 +19,10 @@ import logoSvg from "../../assets/logo.svg";
 
 interface TopChromeProps {
   onPrint: (copies: number) => Promise<boolean>;
+  onExportPng: () => Promise<void>;
 }
 
-export function TopChrome({ onPrint }: TopChromeProps) {
+export function TopChrome({ onPrint, onExportPng }: TopChromeProps) {
   const zoom = useEditorV2Store((s) => s.zoom);
   const label = useEditorV2Store((s) => s.label);
   const gridVisible = useEditorV2Store((s) => s.gridVisible);
@@ -81,6 +83,13 @@ export function TopChrome({ onPrint }: TopChromeProps) {
         <a href="https://github.com/sponsors/tomLadder" target="_blank" rel="noopener noreferrer" className="w-8 h-8 flex items-center justify-center rounded-md text-pink-400 hover:bg-pink-500/10 hover:text-pink-300 hover-fade" title="Sponsor this project">
           <Heart size={16} />
         </a>
+	<button
+	  onClick={onExportPng}
+	  className="w-8 h-8 flex items-center justify-center rounded-md text-ink-300 hover:bg-ink-800 hover:text-ink-100"
+	  title="Export PNG"
+	>
+        <Download size={16} />
+	</button>
         <PrintButton onPrint={onPrint} />
       </div>
 
