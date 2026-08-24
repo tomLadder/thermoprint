@@ -16,9 +16,9 @@ function addTextBoxEl() {
   addElement({
     id: uid(),
     type: "text",
-    x: 8,
+    x: 4,
     y: 4,
-    width: Math.max(5, label.widthPx - 16),
+    width: Math.max(5, label.widthPx - 8),
     height: Math.max(5, label.heightPx - 8),
     rotation: 0,
     props: {

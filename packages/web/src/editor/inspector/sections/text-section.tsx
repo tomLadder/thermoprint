@@ -150,22 +150,74 @@ export function TextSection({ element }: Props) {
         )}
       </div>
       {p.fixedBox && (
-        <button
-          type="button"
-          onClick={() => {
-            const { label } = useEditorV2Store.getState();
-            updateElement(element.id, {
-              x: 8,
-              y: 4,
-              width: Math.max(5, label.widthPx - 16),
-              height: Math.max(5, label.heightPx - 8),
-              rotation: 0,
-            });
-          }}
-          className="mt-1.5 w-full h-7 rounded-md bg-ink-800 border border-white/5 text-ui-xs text-ink-300 hover:text-ink-100 hover:border-accent/40"
-        >
-          Max Box
-        </button>
+        <div className="mt-1.5">
+          <Field label="Margin">
+            <div className="space-y-1">
+              <div className="grid grid-cols-2 gap-1">
+                <NumInput
+                  value={p.marginH ?? 4}
+                  onChange={(v) => {
+                    const h = Math.max(0, Math.round(v));
+                    const vMargin = p.marginV ?? 4;
+                    const { label } = useEditorV2Store.getState();
+                    updateElement(element.id, {
+                      x: h,
+                      y: vMargin,
+                      width: Math.max(5, label.widthPx - 2 * h),
+                      height: Math.max(5, label.heightPx - 2 * vMargin),
+                      rotation: 0,
+                      props: { marginH: h },
+                    });
+                  }}
+                  suffix="px H"
+                />
+                <NumInput
+                  value={p.marginV ?? 4}
+                  onChange={(v) => {
+                    const vMargin = Math.max(0, Math.round(v));
+                    const h = p.marginH ?? 4;
+                    const { label } = useEditorV2Store.getState();
+                    updateElement(element.id, {
+                      x: h,
+                      y: vMargin,
+                      width: Math.max(5, label.widthPx - 2 * h),
+                      height: Math.max(5, label.heightPx - 2 * vMargin),
+                      rotation: 0,
+                      props: { marginV: vMargin },
+                    });
+                  }}
+                  suffix="px V"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-1">
+                {[
+                  { label: "0:0", h: 0, v: 0 },
+                  { label: "4:4", h: 4, v: 4 },
+                  { label: "8:4", h: 8, v: 4 },
+                ].map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => {
+                      const { label } = useEditorV2Store.getState();
+                      updateElement(element.id, {
+                        x: preset.h,
+                        y: preset.v,
+                        width: Math.max(5, label.widthPx - 2 * preset.h),
+                        height: Math.max(5, label.heightPx - 2 * preset.v),
+                        rotation: 0,
+                        props: { marginH: preset.h, marginV: preset.v },
+                      });
+                    }}
+                    className="h-7 rounded-md bg-ink-800 border border-white/5 text-ui-xs text-ink-300 hover:text-ink-100 hover:border-accent/40"
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </Field>
+        </div>
       )}
       <div className="mt-1.5">
         <Field label="Color">
