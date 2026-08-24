@@ -37,6 +37,8 @@ export function TextSection({ element }: Props) {
     fill?: string;
     align?: string;
     verticalAlign?: string;
+    marginH?: number;
+    marginV?: number;
     fixedBox?: boolean;
     italic?: boolean;
   };
