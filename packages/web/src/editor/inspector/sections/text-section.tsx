@@ -40,6 +40,11 @@ export function TextSection({ element }: Props) {
     marginH?: number;
     marginV?: number;
     fixedBox?: boolean;
+    autoFit?: boolean;
+    fitStep?: number;
+    fitTries?: number;
+    actSize?: number;
+    actTries?: number;
     italic?: boolean;
   };
 
@@ -218,6 +223,39 @@ export function TextSection({ element }: Props) {
                 ))}
               </div>
             </div>
+          </Field>
+        </div>
+      )}
+      {p.fixedBox && (
+        <div className="mt-1.5 space-y-1.5">
+          <Field label="Actual" mono>
+            <div className="h-7 flex items-center rounded-md bg-ink-800 border border-white/5 px-2 text-ui-sm text-ink-300 font-mono tabular-nums">
+              {Math.round(p.actSize ?? p.fontSize ?? 48)} px
+            </div>
+          </Field>
+          <Field label="Auto fit">
+            <SegGroup>
+              <SegBtn
+                active={!!p.autoFit}
+                onClick={() => update({ autoFit: !p.autoFit })}
+                title="Fit text to the fixed box"
+              >
+                Fit
+              </SegBtn>
+            </SegGroup>
+          </Field>
+          <Field label="Step" mono>
+            <NumInput
+              value={p.fitStep ?? 1}
+              onChange={(v) => update({ fitStep: Math.max(1, Math.round(v)) })}
+              suffix="px"
+            />
+          </Field>
+          <Field label="Tries" mono>
+            <NumInput
+              value={p.fitTries ?? 0}
+              onChange={(v) => update({ fitTries: Math.max(0, Math.round(v)) })}
+            />
           </Field>
         </div>
       )}

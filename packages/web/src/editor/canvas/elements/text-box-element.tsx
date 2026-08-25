@@ -1,9 +1,318 @@
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useEffect } from "react";
 import { Text } from "react-konva";
 import type Konva from "konva";
 import type { BaseElement } from "../../../store/editor-store.ts";
 import { useEditorV2Store } from "../../../store/editor-store.ts";
 import { ElementWrapper } from "./element-wrapper.tsx";
+
+
+function measureWithLetterSpacing(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  letterSpacing: number,
+): number {
+  const measured = ctx.measureText(text).width;
+  return measured + Math.max(0, text.length - 1) * letterSpacing;
+}
+
+function measureTextBlock(
+  text: string,
+  fontSize: number,
+  fontFamily: string,
+  fontWeight: number,
+  italic: boolean,
+  letterSpacing: number,
+  maxWidth: number,
+): { width: number; height: number; lineCount: number } {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return { width: Infinity, height: Infinity, lineCount: 1 };
+
+  ctx.font = `${italic ? "italic " : ""}${fontWeight >= 700 ? "bold " : ""}${fontSize}px "${fontFamily}", sans-serif`;
+
+  const rawLines = (text || "Text").split("\n");
+  const lines: string[] = [];
+
+  for (const rawLine of rawLines) {
+    if (!rawLine) {
+      lines.push("");
+      continue;
+    }
+
+    const words = rawLine.split(/(\s+)/);
+    let line = "";
+
+    for (const part of words) {
+      const candidate = line + part;
+      if (!line || measureWithLetterSpacing(ctx, candidate, letterSpacing) <= maxWidth) {
+        line = candidate;
+        continue;
+      }
+
+      lines.push(line.trimEnd());
+      line = part.trimStart();
+
+      if (measureWithLetterSpacing(ctx, line, letterSpacing) > maxWidth) {
+        let chunk = "";
+        for (const ch of line) {
+          const candidateChunk = chunk + ch;
+          if (chunk && measureWithLetterSpacing(ctx, candidateChunk, letterSpacing) > maxWidth) {
+            lines.push(chunk);
+            chunk = ch;
+          } else {
+            chunk = candidateChunk;
+          }
+        }
+        line = chunk;
+      }
+    }
+
+    lines.push(line.trimEnd());
+  }
+
+  let width = 0;
+  for (const line of lines) {
+    width = Math.max(width, measureWithLetterSpacing(ctx, line, letterSpacing));
+  }
+
+  return {
+    width,
+    height: Math.max(1, lines.length) * fontSize,
+    lineCount: Math.max(1, lines.length),
+  };
+}
+
+function fontFits(
+  text: string,
+  fontSize: number,
+  boxWidth: number,
+  boxHeight: number,
+  fontFamily: string,
+  fontWeight: number,
+  italic: boolean,
+  letterSpacing: number,
+  maxLines?: number,
+): boolean {
+  const measured = measureTextBlock(
+    text,
+    fontSize,
+    fontFamily,
+    fontWeight,
+    italic,
+    letterSpacing,
+    boxWidth,
+  );
+  return measured.height <= boxHeight &&
+    (maxLines === undefined || measured.lineCount <= maxLines);
+}
+
+function largestFontThatFits(
+  text: string,
+  maxFontSize: number,
+  boxWidth: number,
+  boxHeight: number,
+  fontFamily: string,
+  fontWeight: number,
+  italic: boolean,
+  letterSpacing: number,
+  maxLines?: number,
+): number {
+  let low = 4;
+  let high = Math.max(4, Math.floor(maxFontSize));
+  let best = 4;
+
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    if (fontFits(
+      text, mid, boxWidth, boxHeight, fontFamily, fontWeight,
+      italic, letterSpacing, maxLines,
+    )) {
+      best = mid;
+      low = mid + 1;
+    } else {
+      high = mid - 1;
+    }
+  }
+
+  return best;
+}
+
+interface FitState {
+  fontSize: number;
+  actTries: number;
+  lineCount: number;
+}
+
+function replayTypingState(
+  text: string,
+  maxFontSize: number,
+  boxWidth: number,
+  boxHeight: number,
+  fontFamily: string,
+  fontWeight: number,
+  italic: boolean,
+  letterSpacing: number,
+  step: number,
+  tries: number,
+): FitState {
+  let fontSize = Math.max(4, Math.floor(maxFontSize));
+  let actTries = 0;
+  let previousLineCount = 1;
+  const decrement = Math.max(1, Math.round(step));
+  let prefix = "";
+
+  for (const ch of text || "Text") {
+    prefix += ch;
+    let measured = measureTextBlock(
+      prefix, fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth,
+    );
+
+    if (measured.lineCount > previousLineCount) {
+      while (measured.lineCount > previousLineCount && actTries < tries && fontSize > 4) {
+        const candidate = Math.max(4, fontSize - decrement);
+        if (candidate === fontSize) break;
+        fontSize = candidate;
+        actTries += 1;
+        measured = measureTextBlock(
+          prefix, fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth,
+        );
+      }
+
+      if (measured.lineCount > previousLineCount) {
+        const allowedLines = previousLineCount + 1;
+        const refit = largestFontThatFits(
+          prefix,
+          Math.max(fontSize, 4),
+          boxWidth,
+          boxHeight,
+          fontFamily,
+          fontWeight,
+          italic,
+          letterSpacing,
+          allowedLines,
+        );
+        fontSize = Math.max(4, refit);
+        actTries = 0;
+        measured = measureTextBlock(
+          prefix, fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth,
+        );
+      }
+    }
+
+    previousLineCount = measured.lineCount;
+  }
+
+  while (!fontFits(
+    text || "Text",
+    fontSize,
+    boxWidth,
+    boxHeight,
+    fontFamily,
+    fontWeight,
+    italic,
+    letterSpacing,
+  ) && fontSize > 4) {
+    fontSize -= 1;
+    actTries = 0;
+  }
+
+  const finalMeasured = measureTextBlock(
+    text || "Text", fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth,
+  );
+
+  return { fontSize, actTries, lineCount: finalMeasured.lineCount };
+}
+
+function advanceTypingState(
+  previousText: string,
+  nextText: string,
+  state: FitState,
+  boxWidth: number,
+  boxHeight: number,
+  fontFamily: string,
+  fontWeight: number,
+  italic: boolean,
+  letterSpacing: number,
+  step: number,
+  tries: number,
+): FitState {
+  const decrement = Math.max(1, Math.round(step));
+  let fontSize = state.fontSize;
+  let actTries = state.actTries;
+  const before = measureTextBlock(
+    previousText || "Text", fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth,
+  );
+  let measured = measureTextBlock(
+    nextText || "Text", fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth,
+  );
+
+  if (measured.lineCount > before.lineCount) {
+    while (measured.lineCount > before.lineCount && actTries < tries && fontSize > 4) {
+      fontSize = Math.max(4, fontSize - decrement);
+      actTries += 1;
+      measured = measureTextBlock(
+        nextText || "Text", fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth,
+      );
+    }
+
+    if (measured.lineCount > before.lineCount) {
+      const refit = largestFontThatFits(
+        nextText || "Text",
+        Math.max(fontSize, 4),
+        boxWidth,
+        boxHeight,
+        fontFamily,
+        fontWeight,
+        italic,
+        letterSpacing,
+        before.lineCount + 1,
+      );
+      fontSize = Math.max(4, refit);
+      actTries = 0;
+      measured = measureTextBlock(
+        nextText || "Text", fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth,
+      );
+    }
+  }
+
+  if (measured.height > boxHeight) {
+    fontSize = largestFontThatFits(
+      nextText || "Text",
+      fontSize,
+      boxWidth,
+      boxHeight,
+      fontFamily,
+      fontWeight,
+      italic,
+      letterSpacing,
+    );
+    actTries = 0;
+    measured = measureTextBlock(
+      nextText || "Text", fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth,
+    );
+  }
+
+  return { fontSize, actTries, lineCount: measured.lineCount };
+}
+
+function lineHeightFor(
+  text: string,
+  fontSize: number,
+  boxHeight: number,
+  boxWidth: number,
+  fontFamily: string,
+  fontWeight: number,
+  italic: boolean,
+  letterSpacing: number,
+): number {
+  const measured = measureTextBlock(
+    text || "Text", fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth,
+  );
+  if (measured.lineCount <= 1) return 1;
+  const spare = Math.max(0, boxHeight - measured.lineCount * fontSize);
+  const gap = spare / (measured.lineCount + 3);
+  return 1 + gap / fontSize;
+}
 
 interface Props {
   element: BaseElement;
@@ -27,6 +336,11 @@ export function TextBoxElement({ element, isSelected }: Props) {
     fill?: string;
     align?: string;
     verticalAlign?: string;
+    autoFit?: boolean;
+    fitStep?: number;
+    fitTries?: number;
+    actSize?: number;
+    actTries?: number;
     italic?: boolean;
   };
 
@@ -35,37 +349,136 @@ export function TextBoxElement({ element, isSelected }: Props) {
       .filter(Boolean)
       .join(" ") || "normal";
 
+  const configuredFontSize = p.fontSize || 48;
+  const fontFamily = p.fontFamily || "Inter";
+  const fontWeight = p.fontWeight || 400;
+  const italic = !!p.italic;
+  const letterSpacing = p.letterSpacing || 0;
+  const effectiveFontSize = p.autoFit ? (p.actSize ?? configuredFontSize) : configuredFontSize;
+  const effectiveLineHeight = p.autoFit
+    ? lineHeightFor(
+        p.text || "Text",
+        effectiveFontSize,
+        Math.max(1, element.height),
+        Math.max(1, element.width),
+        fontFamily,
+        fontWeight,
+        italic,
+        letterSpacing,
+      )
+    : 1;
+
+  const editFitStateRef = useRef<FitState>({
+    fontSize: p.actSize ?? configuredFontSize,
+    actTries: p.actTries ?? 0,
+    lineCount: 1,
+  });
+  const editTextRef = useRef(p.text || "Text");
+
+
+  /* Reflow immediately when a formatting input changes. */
+  const fitConfigRef = useRef<string | null>(null);
+  useEffect(() => {
+    const configKey = JSON.stringify([
+      p.autoFit ?? false,
+      configuredFontSize,
+      p.fitStep ?? 1,
+      p.fitTries ?? 0,
+      element.width,
+      element.height,
+      p.fontFamily || "Inter",
+      p.fontWeight || 400,
+      !!p.italic,
+      p.letterSpacing || 0,
+    ]);
+
+    if (fitConfigRef.current === null) {
+      fitConfigRef.current = configKey;
+      return;
+    }
+    if (fitConfigRef.current === configKey) return;
+    fitConfigRef.current = configKey;
+
+    if (!p.autoFit) return;
+
+    const replay = replayTypingState(
+      p.text || "Text",
+      configuredFontSize,
+      Math.max(1, element.width),
+      Math.max(1, element.height),
+      p.fontFamily || "Inter",
+      p.fontWeight || 400,
+      !!p.italic,
+      p.letterSpacing || 0,
+      p.fitStep ?? 1,
+      p.fitTries ?? 0,
+    );
+
+    if (p.actSize !== replay.fontSize || p.actTries !== replay.actTries) {
+      updateElement(element.id, {
+        props: { actSize: replay.fontSize, actTries: replay.actTries },
+      });
+    }
+  }, [
+    p.autoFit,
+    configuredFontSize,
+    p.fitStep,
+    p.fitTries,
+    element.width,
+    element.height,
+    p.fontFamily,
+    p.fontWeight,
+    p.italic,
+    p.letterSpacing,
+    element.id,
+    updateElement,
+  ]);
+
   const startEditing = useCallback(() => {
     const node = ref.current;
     if (!node) return;
 
-    const stage = node.getStage();
-    if (!stage) return;
-
     useEditorV2Store.setState({ editingTextId: element.id });
 
     const absPos = node.getAbsolutePosition();
-    const stageContainer = stage.container();
-    const stageRect = stageContainer.getBoundingClientRect();
+    const stage = node.getStage();
+    if (!stage) return;
+    const stageRect = stage.container().getBoundingClientRect();
     const scale = node.getAbsoluteScale();
 
+    const initialText = p.text || "Text";
+    editFitStateRef.current = {
+      fontSize: p.autoFit ? (p.actSize ?? configuredFontSize) : configuredFontSize,
+      actTries: p.autoFit ? (p.actTries ?? 0) : 0,
+      lineCount: measureTextBlock(
+        initialText,
+        p.autoFit ? (p.actSize ?? configuredFontSize) : configuredFontSize,
+        fontFamily,
+        fontWeight,
+        italic,
+        letterSpacing,
+        Math.max(1, element.width),
+      ).lineCount,
+    };
+    editTextRef.current = initialText;
+
+    const borderWidth = 2;
     node.hide();
     node.getLayer()?.batchDraw();
 
     const textarea = document.createElement("textarea");
-    textarea.value = p.text || "";
-    const borderWidth = 2;
+    textarea.value = initialText;
     textarea.style.position = "fixed";
     textarea.style.left = `${stageRect.left + absPos.x - borderWidth}px`;
     textarea.style.top = `${stageRect.top + absPos.y - borderWidth}px`;
     textarea.style.width = `${element.width * scale.x}px`;
     textarea.style.height = `${element.height * scale.y}px`;
     textarea.style.boxSizing = "content-box";
-    textarea.style.fontSize = `${(p.fontSize || 18) * scale.y}px`;
-    textarea.style.fontFamily = `'${p.fontFamily || "Inter"}', sans-serif`;
+    textarea.style.fontSize = `${editFitStateRef.current.fontSize * scale.y}px`;
+    textarea.style.fontFamily = `'${fontFamily}', sans-serif`;
     textarea.style.fontWeight = fontStyle.includes("bold") ? "bold" : "normal";
     textarea.style.fontStyle = fontStyle.includes("italic") ? "italic" : "normal";
-    textarea.style.letterSpacing = `${(p.letterSpacing || 0) * scale.x}px`;
+    textarea.style.letterSpacing = `${letterSpacing * scale.x}px`;
     textarea.style.color = p.fill || "#000000";
     textarea.style.textAlign = (p.align as string) || "left";
     textarea.style.border = "2px solid var(--color-accent)";
@@ -76,28 +489,95 @@ export function TextBoxElement({ element, isSelected }: Props) {
     textarea.style.margin = "0px";
     textarea.style.resize = "none";
     textarea.style.overflow = "hidden";
-    textarea.style.lineHeight = `${node.lineHeight()}`;
+    textarea.style.lineHeight = `${effectiveLineHeight}`;
     textarea.style.wordBreak = "break-word";
     textarea.style.whiteSpace = "pre-wrap";
     textarea.style.zIndex = "1000";
     textarea.style.transformOrigin = "left top";
-    if (element.rotation) {
-      textarea.style.transform = `rotate(${element.rotation}deg)`;
-    }
+    if (element.rotation) textarea.style.transform = `rotate(${element.rotation}deg)`;
 
     document.body.appendChild(textarea);
     textarea.focus();
     textarea.select();
 
     const commit = () => {
-      const newText = textarea.value;
-      updateElement(element.id, { props: { text: newText } });
+      updateElement(element.id, {
+        props: {
+          text: textarea.value,
+          actSize: editFitStateRef.current.fontSize,
+          actTries: editFitStateRef.current.actTries,
+        },
+      });
       useEditorV2Store.setState({ editingTextId: null });
       document.body.removeChild(textarea);
       node.show();
       node.getLayer()?.batchDraw();
     };
 
+    const refreshFit = () => {
+      if (!p.autoFit) {
+        updateElement(element.id, { props: { text: textarea.value } });
+        editTextRef.current = textarea.value;
+        return;
+      }
+
+      const nextText = textarea.value;
+      const previousText = editTextRef.current;
+      const isSimpleAppend =
+        nextText.length === previousText.length + 1 && nextText.startsWith(previousText);
+
+      const nextState = isSimpleAppend
+        ? advanceTypingState(
+            previousText,
+            nextText,
+            editFitStateRef.current,
+            Math.max(1, element.width),
+            Math.max(1, element.height),
+            fontFamily,
+            fontWeight,
+            italic,
+            letterSpacing,
+            p.fitStep ?? 1,
+            p.fitTries ?? 0,
+          )
+        : replayTypingState(
+            nextText,
+            configuredFontSize,
+            Math.max(1, element.width),
+            Math.max(1, element.height),
+            fontFamily,
+            fontWeight,
+            italic,
+            letterSpacing,
+            p.fitStep ?? 1,
+            p.fitTries ?? 0,
+          );
+
+      editFitStateRef.current = nextState;
+      editTextRef.current = nextText;
+
+      const lh = lineHeightFor(
+        nextText,
+        nextState.fontSize,
+        Math.max(1, element.height),
+        Math.max(1, element.width),
+        fontFamily,
+        fontWeight,
+        italic,
+        letterSpacing,
+      );
+      textarea.style.fontSize = `${nextState.fontSize * scale.y}px`;
+      textarea.style.lineHeight = `${lh}`;
+      updateElement(element.id, {
+        props: {
+          text: nextText,
+          actSize: nextState.fontSize,
+          actTries: nextState.actTries,
+        },
+      });
+    };
+
+    textarea.addEventListener("input", refreshFit);
     textarea.addEventListener("blur", commit);
     textarea.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
@@ -112,7 +592,19 @@ export function TextBoxElement({ element, isSelected }: Props) {
         textarea.blur();
       }
     });
-  }, [element, p, fontStyle, updateElement]);
+  }, [
+    configuredFontSize,
+    element,
+    fontFamily,
+    fontStyle,
+    fontWeight,
+    italic,
+    letterSpacing,
+    p,
+    updateElement,
+    effectiveLineHeight,
+  ]);
+
 
   return (
     <>
@@ -125,7 +617,8 @@ export function TextBoxElement({ element, isSelected }: Props) {
         height={element.height}
         rotation={element.rotation}
         text={p.text || "Text"}
-        fontSize={p.fontSize || 18}
+        fontSize={effectiveFontSize}
+        lineHeight={effectiveLineHeight}
         fontFamily={p.fontFamily || "Inter"}
         fontStyle={fontStyle}
         letterSpacing={p.letterSpacing || 0}
