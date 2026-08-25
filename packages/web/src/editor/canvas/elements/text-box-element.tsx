@@ -1,6 +1,6 @@
 import { useRef, useCallback, useEffect } from "react";
 import { Text } from "react-konva";
-import type Konva from "konva";
+import Konva from "konva";
 import type { BaseElement } from "../../../store/editor-store.ts";
 import { useEditorV2Store } from "../../../store/editor-store.ts";
 import { ElementWrapper } from "./element-wrapper.tsx";
@@ -23,6 +23,7 @@ function measureTextBlock(
   italic: boolean,
   letterSpacing: number,
   maxWidth: number,
+  lineHeight = 1,
 ): { width: number; height: number; lineCount: number } {
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
@@ -75,9 +76,23 @@ function measureTextBlock(
     width = Math.max(width, measureWithLetterSpacing(ctx, line, letterSpacing));
   }
 
+  const measuredText = new Konva.Text({
+    text: lines.join("\n"),
+    width: maxWidth,
+    fontSize,
+    fontFamily,
+    fontStyle: `${italic ? "italic " : ""}${fontWeight >= 700 ? "bold" : ""}`.trim() || "normal",
+    letterSpacing,
+    lineHeight,
+    wrap: "word",
+    padding: 0,
+  });
+
+  const konvaHeight = measuredText.height();
+
   return {
     width,
-    height: Math.max(1, lines.length) * fontSize,
+    height: konvaHeight,
     lineCount: Math.max(1, lines.length),
   };
 }
@@ -91,6 +106,7 @@ function fontFits(
   fontWeight: number,
   italic: boolean,
   letterSpacing: number,
+  lineHeight: number,
   maxLines?: number,
 ): boolean {
   const measured = measureTextBlock(
@@ -101,6 +117,7 @@ function fontFits(
     italic,
     letterSpacing,
     boxWidth,
+    lineHeight,
   );
   return measured.height <= boxHeight &&
     (maxLines === undefined || measured.lineCount <= maxLines);
@@ -115,6 +132,7 @@ function largestFontThatFits(
   fontWeight: number,
   italic: boolean,
   letterSpacing: number,
+  lineHeight: number,
   maxLines?: number,
 ): number {
   let low = 4;
@@ -125,7 +143,7 @@ function largestFontThatFits(
     const mid = Math.floor((low + high) / 2);
     if (fontFits(
       text, mid, boxWidth, boxHeight, fontFamily, fontWeight,
-      italic, letterSpacing, maxLines,
+      italic, letterSpacing, lineHeight, maxLines,
     )) {
       best = mid;
       low = mid + 1;
@@ -154,6 +172,7 @@ function replayTypingState(
   letterSpacing: number,
   step: number,
   tries: number,
+  lineHeight: number,
 ): FitState {
   let fontSize = Math.max(4, Math.floor(maxFontSize));
   let actTries = 0;
@@ -164,7 +183,7 @@ function replayTypingState(
   for (const ch of text || "Text") {
     prefix += ch;
     let measured = measureTextBlock(
-      prefix, fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth,
+      prefix, fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth, lineHeight,
     );
 
     if (measured.lineCount > previousLineCount) {
@@ -174,7 +193,7 @@ function replayTypingState(
         fontSize = candidate;
         actTries += 1;
         measured = measureTextBlock(
-          prefix, fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth,
+          prefix, fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth, lineHeight,
         );
       }
 
@@ -189,12 +208,13 @@ function replayTypingState(
           fontWeight,
           italic,
           letterSpacing,
+          lineHeight,
           allowedLines,
         );
         fontSize = Math.max(4, refit);
         actTries = 0;
         measured = measureTextBlock(
-          prefix, fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth,
+          prefix, fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth, lineHeight,
         );
       }
     }
@@ -211,13 +231,14 @@ function replayTypingState(
     fontWeight,
     italic,
     letterSpacing,
+    lineHeight,
   ) && fontSize > 4) {
     fontSize -= 1;
     actTries = 0;
   }
 
   const finalMeasured = measureTextBlock(
-    text || "Text", fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth,
+    text || "Text", fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth, lineHeight,
   );
 
   return { fontSize, actTries, lineCount: finalMeasured.lineCount };
@@ -235,15 +256,16 @@ function advanceTypingState(
   letterSpacing: number,
   step: number,
   tries: number,
+  lineHeight: number,
 ): FitState {
   const decrement = Math.max(1, Math.round(step));
   let fontSize = state.fontSize;
   let actTries = state.actTries;
   const before = measureTextBlock(
-    previousText || "Text", fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth,
+    previousText || "Text", fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth, lineHeight,
   );
   let measured = measureTextBlock(
-    nextText || "Text", fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth,
+    nextText || "Text", fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth, lineHeight,
   );
 
   if (measured.lineCount > before.lineCount) {
@@ -251,7 +273,7 @@ function advanceTypingState(
       fontSize = Math.max(4, fontSize - decrement);
       actTries += 1;
       measured = measureTextBlock(
-        nextText || "Text", fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth,
+        nextText || "Text", fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth, lineHeight,
       );
     }
 
@@ -265,12 +287,13 @@ function advanceTypingState(
         fontWeight,
         italic,
         letterSpacing,
+        lineHeight,
         before.lineCount + 1,
       );
       fontSize = Math.max(4, refit);
       actTries = 0;
       measured = measureTextBlock(
-        nextText || "Text", fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth,
+        nextText || "Text", fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth, lineHeight,
       );
     }
   }
@@ -285,33 +308,15 @@ function advanceTypingState(
       fontWeight,
       italic,
       letterSpacing,
+      lineHeight,
     );
     actTries = 0;
     measured = measureTextBlock(
-      nextText || "Text", fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth,
+      nextText || "Text", fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth, lineHeight,
     );
   }
 
   return { fontSize, actTries, lineCount: measured.lineCount };
-}
-
-function lineHeightFor(
-  text: string,
-  fontSize: number,
-  boxHeight: number,
-  boxWidth: number,
-  fontFamily: string,
-  fontWeight: number,
-  italic: boolean,
-  letterSpacing: number,
-): number {
-  const measured = measureTextBlock(
-    text || "Text", fontSize, fontFamily, fontWeight, italic, letterSpacing, boxWidth,
-  );
-  if (measured.lineCount <= 1) return 1;
-  const spare = Math.max(0, boxHeight - measured.lineCount * fontSize);
-  const gap = spare / (measured.lineCount + 3);
-  return 1 + gap / fontSize;
 }
 
 interface Props {
@@ -341,6 +346,7 @@ export function TextBoxElement({ element, isSelected }: Props) {
     fitTries?: number;
     actSize?: number;
     actTries?: number;
+    lineHeight?: number;
     italic?: boolean;
   };
 
@@ -354,19 +360,9 @@ export function TextBoxElement({ element, isSelected }: Props) {
   const fontWeight = p.fontWeight || 400;
   const italic = !!p.italic;
   const letterSpacing = p.letterSpacing || 0;
+  const configuredLineHeight = p.lineHeight ?? 1;
   const effectiveFontSize = p.autoFit ? (p.actSize ?? configuredFontSize) : configuredFontSize;
-  const effectiveLineHeight = p.autoFit
-    ? lineHeightFor(
-        p.text || "Text",
-        effectiveFontSize,
-        Math.max(1, element.height),
-        Math.max(1, element.width),
-        fontFamily,
-        fontWeight,
-        italic,
-        letterSpacing,
-      )
-    : 1;
+  const effectiveLineHeight = configuredLineHeight;
 
   const editFitStateRef = useRef<FitState>({
     fontSize: p.actSize ?? configuredFontSize,
@@ -390,6 +386,7 @@ export function TextBoxElement({ element, isSelected }: Props) {
       p.fontWeight || 400,
       !!p.italic,
       p.letterSpacing || 0,
+      configuredLineHeight,
     ]);
 
     if (fitConfigRef.current === null) {
@@ -412,6 +409,7 @@ export function TextBoxElement({ element, isSelected }: Props) {
       p.letterSpacing || 0,
       p.fitStep ?? 1,
       p.fitTries ?? 0,
+      configuredLineHeight,
     );
 
     if (p.actSize !== replay.fontSize || p.actTries !== replay.actTries) {
@@ -430,6 +428,7 @@ export function TextBoxElement({ element, isSelected }: Props) {
     p.fontWeight,
     p.italic,
     p.letterSpacing,
+    configuredLineHeight,
     element.id,
     updateElement,
   ]);
@@ -458,6 +457,7 @@ export function TextBoxElement({ element, isSelected }: Props) {
         italic,
         letterSpacing,
         Math.max(1, element.width),
+        configuredLineHeight,
       ).lineCount,
     };
     editTextRef.current = initialText;
@@ -539,6 +539,7 @@ export function TextBoxElement({ element, isSelected }: Props) {
             letterSpacing,
             p.fitStep ?? 1,
             p.fitTries ?? 0,
+            configuredLineHeight,
           )
         : replayTypingState(
             nextText,
@@ -551,21 +552,13 @@ export function TextBoxElement({ element, isSelected }: Props) {
             letterSpacing,
             p.fitStep ?? 1,
             p.fitTries ?? 0,
+            configuredLineHeight,
           );
 
       editFitStateRef.current = nextState;
       editTextRef.current = nextText;
 
-      const lh = lineHeightFor(
-        nextText,
-        nextState.fontSize,
-        Math.max(1, element.height),
-        Math.max(1, element.width),
-        fontFamily,
-        fontWeight,
-        italic,
-        letterSpacing,
-      );
+      const lh = configuredLineHeight;
       textarea.style.fontSize = `${nextState.fontSize * scale.y}px`;
       textarea.style.lineHeight = `${lh}`;
       updateElement(element.id, {

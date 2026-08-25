@@ -47,6 +47,7 @@ export function NumInput({
   min,
   max,
   step = 1,
+  decimals,
 }: {
   value: number;
   onChange: (v: number) => void;
@@ -54,12 +55,13 @@ export function NumInput({
   min?: number;
   max?: number;
   step?: number;
+  decimals?: number;
 }) {
   return (
     <div className="flex items-center h-7 rounded-md bg-ink-800 border border-white/5 focus-within:border-accent/50">
       <input
         type="number"
-        value={Math.round(value)}
+        value={decimals === undefined ? Math.round(value) : value.toFixed(decimals)}
         step={step}
         min={min}
         max={max}

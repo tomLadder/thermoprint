@@ -45,6 +45,7 @@ export function TextSection({ element }: Props) {
     fitTries?: number;
     actSize?: number;
     actTries?: number;
+    lineHeight?: number;
     italic?: boolean;
   };
 
@@ -255,6 +256,17 @@ export function TextSection({ element }: Props) {
             <NumInput
               value={p.fitTries ?? 0}
               onChange={(v) => update({ fitTries: Math.max(0, Math.round(v)) })}
+            />
+          </Field>
+          <Field label="Line Height" mono>
+            <NumInput
+              value={p.lineHeight ?? 1}
+              onChange={(v) =>
+                update({ lineHeight: Math.max(0, Math.round(v * 20) / 20) })
+              }
+              step={0.05}
+              min={0}
+              decimals={2}
             />
           </Field>
         </div>

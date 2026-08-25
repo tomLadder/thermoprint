@@ -30,6 +30,7 @@ function addTextBoxEl() {
       actTries: 0,
       fitStep: 1,
       fitTries: 0,
+      lineHeight: 1,
       marginH: 4,
       marginV: 4,
       fontFamily: "Inter",
