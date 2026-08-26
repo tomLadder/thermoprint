@@ -47,6 +47,19 @@ function captureLabel(
   return canvas;
 }
 
+function downloadCanvasAsPng(canvas: HTMLCanvasElement, filename: string): void {
+  canvas.toBlob((blob) => {
+    if (!blob) return;
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  }, "image/png");
+}
+
 function rotateCanvas90CW(src: HTMLCanvasElement): HTMLCanvasElement {
   const dst = document.createElement("canvas");
   dst.width = src.height;
@@ -72,6 +85,26 @@ export function Editor() {
     };
     window.addEventListener("beforeunload", h);
     return () => window.removeEventListener("beforeunload", h);
+  }, []);
+
+  const exportPng = useCallback(async (): Promise<void> => {
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    const { label, currentLabelName } = useEditorV2Store.getState();
+
+    // Deselect to avoid selection handles in the exported image.
+    useEditorV2Store.getState().clearSelection();
+
+    // Wait a frame for Konva to re-render without selection handles.
+    await new Promise((r) => requestAnimationFrame(r));
+
+    const canvas = captureLabel(stage, label.widthPx, label.heightPx);
+
+    const filename =
+      (currentLabelName || "label").replace(/[^a-zA-Z0-9._-]+/g, "_") + ".png";
+
+    downloadCanvasAsPng(canvas, filename);
   }, []);
 
   const print = useCallback(async (copies: number): Promise<boolean> => {
@@ -131,7 +164,7 @@ export function Editor() {
 
   return (
     <div className="w-screen h-screen flex flex-col overflow-hidden bg-ink-950 text-ink-100">
-      <TopChrome onPrint={print} />
+      <TopChrome onPrint={print} onExportPng={exportPng} />
       <div className="relative flex-1 min-h-0 flex flex-col">
         <Canvas ref={stageRef} />
         <Inspector />
