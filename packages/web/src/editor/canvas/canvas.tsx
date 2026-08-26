@@ -9,6 +9,7 @@ import { getLabelSizes } from "../../label/label-sizes.ts";
 import { ChevronDown } from "lucide-react";
 import { LabelPaper } from "./label-paper.tsx";
 import { TextElement } from "./elements/text-element.tsx";
+import { TextBoxElement } from "./elements/text-box-element.tsx";
 import { RectElement } from "./elements/rect-element.tsx";
 import { LineElement } from "./elements/line-element.tsx";
 import { QrElement } from "./elements/qr-element.tsx";
@@ -135,7 +136,9 @@ function LabelSizeSelector({
 function renderElement(el: BaseElement, isSelected: boolean) {
   switch (el.type) {
     case "text":
-      return <TextElement key={el.id} element={el} isSelected={isSelected} />;
+      return (el.props as { fixedBox?: boolean }).fixedBox
+        ? <TextBoxElement key={el.id} element={el} isSelected={isSelected} />
+        : <TextElement key={el.id} element={el} isSelected={isSelected} />;
     case "rect":
       return <RectElement key={el.id} element={el} isSelected={isSelected} />;
     case "line":

@@ -11,6 +11,39 @@ function uid(): string {
   return crypto.randomUUID();
 }
 
+function addTextBoxEl() {
+  const { label, addElement } = useEditorV2Store.getState();
+  addElement({
+    id: uid(),
+    type: "text",
+    x: 4,
+    y: 4,
+    width: Math.max(5, label.widthPx - 8),
+    height: Math.max(5, label.heightPx - 8),
+    rotation: 0,
+    props: {
+      text: "Text Box",
+      fixedBox: true,
+      fontSize: 48,
+      autoFit: true,
+      actSize: 48,
+      actTries: 0,
+      fitStep: 1,
+      fitTries: 0,
+      lineHeight: 1,
+      marginH: 4,
+      marginV: 4,
+      fontFamily: "Inter",
+      fontWeight: 600,
+      letterSpacing: 0,
+      fill: "#000000",
+      align: "center",
+      verticalAlign: "middle",
+      italic: false,
+    },
+  });
+}
+
 function addTextEl() {
   const { label, addElement } = useEditorV2Store.getState();
   addElement({
@@ -132,6 +165,7 @@ function addLineEl() {
 // Export add functions for use by Dock
 export {
   addTextEl,
+  addTextBoxEl,
   addQrEl,
   addBarcodeEl,
   addImageEl,

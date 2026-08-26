@@ -17,6 +17,7 @@ import { DockDivider } from "./dock-divider.tsx";
 import { Kbd } from "./kbd.tsx";
 import {
   addTextEl,
+  addTextBoxEl,
   addQrEl,
   addBarcodeEl,
   addImageEl,
@@ -73,6 +74,7 @@ export function Dock() {
           <div className="grid grid-cols-4 gap-1 p-2">
             {[
               { icon: Type, label: "Text", fn: addTextEl },
+              { icon: Type, label: "Text Box", fn: addTextBoxEl },
               { icon: QrCode, label: "QR Code", fn: addQrEl },
               { icon: Barcode, label: "Barcode", fn: addBarcodeEl },
               { icon: ImageIcon, label: "Image", fn: addImageEl },
@@ -108,6 +110,7 @@ export function Dock() {
             <div className="hidden md:contents">
               <DockGroup label="Add">
                 <DockBtn icon={Type} label="Text" shortcut="T" onClick={addTextEl} />
+                <DockBtn icon={Type} label="Text Box" onClick={addTextBoxEl} />
                 <DockBtn icon={QrCode} label="QR" shortcut="Q" onClick={addQrEl} />
                 <DockBtn icon={Barcode} label="Barcode" shortcut="B" onClick={addBarcodeEl} />
                 <DockBtn icon={ImageIcon} label="Image" shortcut="I" onClick={addImageEl} />

@@ -4,6 +4,9 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  AlignVerticalJustifyStart,
+  AlignVerticalJustifyCenter,
+  AlignVerticalJustifyEnd,
 } from "lucide-react";
 import type { BaseElement } from "../../../store/editor-store.ts";
 import { useEditorV2Store } from "../../../store/editor-store.ts";
@@ -33,6 +36,16 @@ export function TextSection({ element }: Props) {
     letterSpacing?: number;
     fill?: string;
     align?: string;
+    verticalAlign?: string;
+    marginH?: number;
+    marginV?: number;
+    fixedBox?: boolean;
+    autoFit?: boolean;
+    fitStep?: number;
+    fitTries?: number;
+    actSize?: number;
+    actTries?: number;
+    lineHeight?: number;
     italic?: boolean;
   };
 
@@ -99,23 +112,165 @@ export function TextSection({ element }: Props) {
           <SegBtn
             active={p.align === "left"}
             onClick={() => update({ align: "left" })}
+            title="Align left"
           >
             <AlignLeft size={14} />
           </SegBtn>
           <SegBtn
             active={p.align === "center"}
             onClick={() => update({ align: "center" })}
+            title="Center horizontally"
           >
             <AlignCenter size={14} />
           </SegBtn>
           <SegBtn
             active={p.align === "right"}
             onClick={() => update({ align: "right" })}
+            title="Align right"
           >
             <AlignRight size={14} />
           </SegBtn>
         </SegGroup>
+        {p.fixedBox && (
+          <SegGroup>
+            <SegBtn
+              active={(p.verticalAlign || "middle") === "top"}
+              onClick={() => update({ verticalAlign: "top" })}
+              title="Align top"
+            >
+              <AlignVerticalJustifyStart size={14} />
+            </SegBtn>
+            <SegBtn
+              active={(p.verticalAlign || "middle") === "middle"}
+              onClick={() => update({ verticalAlign: "middle" })}
+              title="Center vertically"
+            >
+              <AlignVerticalJustifyCenter size={14} />
+            </SegBtn>
+            <SegBtn
+              active={(p.verticalAlign || "middle") === "bottom"}
+              onClick={() => update({ verticalAlign: "bottom" })}
+              title="Align bottom"
+            >
+              <AlignVerticalJustifyEnd size={14} />
+            </SegBtn>
+          </SegGroup>
+        )}
       </div>
+      {p.fixedBox && (
+        <div className="mt-1.5">
+          <Field label="Margin">
+            <div className="space-y-1">
+              <div className="grid grid-cols-2 gap-1">
+                <NumInput
+                  value={p.marginH ?? 4}
+                  onChange={(v) => {
+                    const h = Math.max(0, Math.round(v));
+                    const vMargin = p.marginV ?? 4;
+                    const { label } = useEditorV2Store.getState();
+                    updateElement(element.id, {
+                      x: h,
+                      y: vMargin,
+                      width: Math.max(5, label.widthPx - 2 * h),
+                      height: Math.max(5, label.heightPx - 2 * vMargin),
+                      rotation: 0,
+                      props: { marginH: h },
+                    });
+                  }}
+                  suffix="px H"
+                />
+                <NumInput
+                  value={p.marginV ?? 4}
+                  onChange={(v) => {
+                    const vMargin = Math.max(0, Math.round(v));
+                    const h = p.marginH ?? 4;
+                    const { label } = useEditorV2Store.getState();
+                    updateElement(element.id, {
+                      x: h,
+                      y: vMargin,
+                      width: Math.max(5, label.widthPx - 2 * h),
+                      height: Math.max(5, label.heightPx - 2 * vMargin),
+                      rotation: 0,
+                      props: { marginV: vMargin },
+                    });
+                  }}
+                  suffix="px V"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-1">
+                {[
+                  { label: "0:0", h: 0, v: 0 },
+                  { label: "4:4", h: 4, v: 4 },
+                  { label: "8:4", h: 8, v: 4 },
+                ].map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => {
+                      const { label } = useEditorV2Store.getState();
+                      updateElement(element.id, {
+                        x: preset.h,
+                        y: preset.v,
+                        width: Math.max(5, label.widthPx - 2 * preset.h),
+                        height: Math.max(5, label.heightPx - 2 * preset.v),
+                        rotation: 0,
+                        props: { marginH: preset.h, marginV: preset.v },
+                      });
+                    }}
+                    className="h-7 rounded-md bg-ink-800 border border-white/5 text-ui-xs text-ink-300 hover:text-ink-100 hover:border-accent/40"
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </Field>
+        </div>
+      )}
+      {p.fixedBox && (
+        <div className="mt-1.5 space-y-1.5">
+          <Field label="Actual" mono>
+            <div className="h-7 flex items-center rounded-md bg-ink-800 border border-white/5 px-2 text-ui-sm text-ink-300 font-mono tabular-nums">
+              {Math.round(p.actSize ?? p.fontSize ?? 48)} px
+            </div>
+          </Field>
+          <Field label="Auto fit">
+            <SegGroup>
+              <SegBtn
+                active={!!p.autoFit}
+                onClick={() => update({ autoFit: !p.autoFit })}
+                title="Fit text to the fixed box"
+              >
+                Fit
+              </SegBtn>
+            </SegGroup>
+          </Field>
+          <Field label="Step" mono>
+            <NumInput
+              value={p.fitStep ?? 1}
+              onChange={(v) => update({ fitStep: Math.max(1, Math.round(v)) })}
+              suffix="px"
+            />
+          </Field>
+          <Field label="Tries" mono>
+            <NumInput
+              value={p.fitTries ?? 0}
+              onChange={(v) => update({ fitTries: Math.max(0, Math.round(v)) })}
+            />
+          </Field>
+          <Field label="Line Height" mono>
+            <NumInput
+              value={p.lineHeight ?? 1}
+              onChange={(v) =>
+                update({ lineHeight: Math.max(0, Math.round(v * 20) / 20) })
+              }
+              step={0.05}
+              min={0}
+              decimals={2}
+            />
+          </Field>
+        </div>
+      )}
       <div className="mt-1.5">
         <Field label="Color">
           <ColorInput
