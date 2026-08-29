@@ -34,6 +34,7 @@ export function TextSection({ element }: Props) {
     fill?: string;
     align?: string;
     italic?: boolean;
+    uppercase?: boolean;
   };
 
   const update = (patch: Record<string, unknown>) =>
@@ -93,6 +94,15 @@ export function TextSection({ element }: Props) {
             title="Italic"
           >
             <Italic size={14} />
+          </SegBtn>
+        </SegGroup>
+        <SegGroup>
+          <SegBtn
+            active={!!p.uppercase}
+            onClick={() => update({ uppercase: !p.uppercase })}
+            title="All Caps (TT)"
+          >
+            <span className="font-bold text-[11px] font-mono leading-none px-1">TT</span>
           </SegBtn>
         </SegGroup>
         <SegGroup>

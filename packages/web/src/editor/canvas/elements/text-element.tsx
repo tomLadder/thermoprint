@@ -27,6 +27,7 @@ export function TextElement({ element, isSelected }: Props) {
     fill?: string;
     align?: string;
     italic?: boolean;
+    uppercase?: boolean;
   };
 
   const fontStyle =
@@ -154,7 +155,7 @@ export function TextElement({ element, isSelected }: Props) {
         y={element.y}
         width={element.width}
         rotation={element.rotation}
-        text={p.text || "Text"}
+        text={p.uppercase ? (p.text || "Text").toUpperCase() : (p.text || "Text")}
         fontSize={p.fontSize || 18}
         fontFamily={p.fontFamily || "Inter"}
         fontStyle={fontStyle}
