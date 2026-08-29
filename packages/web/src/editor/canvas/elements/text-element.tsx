@@ -189,7 +189,20 @@ export function TextElement({ element, isSelected }: Props) {
           });
         }}
       />
-      {!isEditing && <ElementWrapper nodeRef={ref} isSelected={isSelected} />}
+      {!isEditing && (
+        <ElementWrapper
+          nodeRef={ref}
+          isSelected={isSelected}
+          deps={[
+            p.fontFamily,
+            p.fontSize,
+            p.letterSpacing,
+            p.text,
+            fontStyle,
+            element.height,
+          ]}
+        />
+      )}
     </>
   );
 }
