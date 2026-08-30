@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useEditorV2Store, type BaseElement } from "../store/editor-store.ts";
+import { PRESET_FORMATS } from "./date-format.ts";
 
 // Module-level print callback, set by Editor when it mounts
 let _printFn: ((copies: number) => Promise<boolean>) | null = null;
@@ -129,6 +130,30 @@ function addLineEl() {
   });
 }
 
+function addDateEl() {
+  const { label, addElement } = useEditorV2Store.getState();
+  addElement({
+    id: uid(),
+    type: "text",
+    x: Math.round(label.widthPx / 2 - 60),
+    y: Math.round(label.heightPx / 2 - 12),
+    width: 120,
+    height: 24,
+    rotation: 0,
+    props: {
+      text: PRESET_FORMATS["date"],
+      fontSize: 18,
+      fontFamily: "Inter",
+      fontWeight: 600,
+      letterSpacing: 0,
+      fill: "#000000",
+      align: "center",
+      italic: false,
+      datePreset: "date",
+    },
+  });
+}
+
 // Export add functions for use by Dock
 export {
   addTextEl,
@@ -137,6 +162,7 @@ export {
   addImageEl,
   addRectEl,
   addLineEl,
+  addDateEl,
 };
 
 export function useKeyboardShortcuts() {
@@ -276,6 +302,9 @@ export function useKeyboardShortcuts() {
             return;
           case "l":
             addLineEl();
+            return;
+          case "d":
+            addDateEl();
             return;
           case "g":
             useEditorV2Store.setState((s) => ({

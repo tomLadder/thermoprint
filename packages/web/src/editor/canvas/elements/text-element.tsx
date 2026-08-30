@@ -4,6 +4,7 @@ import type Konva from "konva";
 import type { BaseElement } from "../../../store/editor-store.ts";
 import { useEditorV2Store } from "../../../store/editor-store.ts";
 import { ElementWrapper } from "./element-wrapper.tsx";
+import { getDisplayText } from "../../../lib/date-format.ts";
 
 interface Props {
   element: BaseElement;
@@ -27,7 +28,11 @@ export function TextElement({ element, isSelected }: Props) {
     fill?: string;
     align?: string;
     italic?: boolean;
+    datePreset?: string;
+    dateLocale?: string;
   };
+
+  const displayText = getDisplayText(p.text || "Text", p.datePreset as any, p.dateLocale);
 
   const fontStyle =
     [p.italic ? "italic" : "", p.fontWeight && p.fontWeight >= 700 ? "bold" : ""]
@@ -154,7 +159,7 @@ export function TextElement({ element, isSelected }: Props) {
         y={element.y}
         width={element.width}
         rotation={element.rotation}
-        text={p.text || "Text"}
+        text={displayText}
         fontSize={p.fontSize || 18}
         fontFamily={p.fontFamily || "Inter"}
         fontStyle={fontStyle}
