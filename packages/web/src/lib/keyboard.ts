@@ -35,28 +35,36 @@ function addTextEl() {
 }
 
 function addQrEl() {
-  const { addElement } = useEditorV2Store.getState();
+  const { label, addElement } = useEditorV2Store.getState();
+  const maxDim = Math.round(Math.min(label.widthPx, label.heightPx) * 0.8);
+  const size = Math.max(24, Math.min(120, maxDim));
+  const x = Math.round((label.widthPx - size) / 2);
+  const y = Math.round((label.heightPx - size) / 2);
   addElement({
     id: uid(),
     type: "qrcode",
-    x: 20,
-    y: 20,
-    width: 120,
-    height: 120,
+    x,
+    y,
+    width: size,
+    height: size,
     rotation: 0,
     props: { content: "https://google.com", errorCorrectionLevel: "M" },
   });
 }
 
 function addBarcodeEl() {
-  const { addElement } = useEditorV2Store.getState();
+  const { label, addElement } = useEditorV2Store.getState();
+  const w = Math.round(Math.min(220, label.widthPx * 0.85));
+  const h = Math.round(Math.min(80, label.heightPx * 0.7));
+  const x = Math.round((label.widthPx - w) / 2);
+  const y = Math.round((label.heightPx - h) / 2);
   addElement({
     id: uid(),
     type: "barcode",
-    x: 20,
-    y: 40,
-    width: 220,
-    height: 80,
+    x,
+    y,
+    width: w,
+    height: h,
     rotation: 0,
     props: { content: "1234567890", format: "CODE128", displayValue: true },
   });

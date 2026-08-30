@@ -23,20 +23,42 @@ export function BarcodeElement({ element, isSelected }: Props) {
   };
 
   const cacheKey = useMemo(
-    () => `${p.content || ""}|${p.format || "CODE128"}|${p.displayValue}`,
-    [p.content, p.format, p.displayValue],
+    () => `${p.content || ""}|${p.format || "CODE128"}|${p.displayValue}|${element.width}|${element.height}`,
+    [p.content, p.format, p.displayValue, element.width, element.height],
   );
 
   const [image, setImage] = useState<HTMLImageElement | null>(null);
 
   useEffect(() => {
     try {
-      const canvas = document.createElement("canvas");
-      JsBarcode(canvas, p.content || "0000", {
+      const showVal = p.displayValue ?? true;
+      const fontSz = showVal
+        ? Math.max(9, Math.min(18, Math.round(element.height * 0.22)))
+        : 0;
+      const barH = Math.max(12, Math.round(element.height - (showVal ? fontSz + 8 : 4)));
+
+      // Measure natural module width using a 1px test render
+      const testCanvas = document.createElement("canvas");
+      JsBarcode(testCanvas, p.content || "1234567890", {
         format: p.format || "CODE128",
-        displayValue: p.displayValue ?? true,
+        displayValue: false,
         margin: 2,
-        height: 60,
+        width: 1,
+        height: 10,
+      });
+
+      const modules = testCanvas.width > 4 ? testCanvas.width - 4 : 100;
+      const targetBarWidth = Math.max(1, Math.min(6, (element.width - 6) / modules));
+
+      const canvas = document.createElement("canvas");
+      JsBarcode(canvas, p.content || "1234567890", {
+        format: p.format || "CODE128",
+        displayValue: showVal,
+        fontSize: fontSz,
+        textMargin: 1,
+        margin: 2,
+        width: targetBarWidth,
+        height: barH,
         background: "#ffffff",
         lineColor: "#000000",
       });
@@ -46,7 +68,7 @@ export function BarcodeElement({ element, isSelected }: Props) {
     } catch {
       // Invalid barcode content for format
     }
-  }, [cacheKey, p.content, p.format, p.displayValue]);
+  }, [cacheKey]);
 
   if (!image) {
     return (

@@ -1,6 +1,8 @@
 import {
   AlignHorizontalJustifyCenter,
   AlignVerticalJustifyCenter,
+  Focus,
+  Maximize,
 } from "lucide-react";
 import type { BaseElement } from "../../../store/editor-store.ts";
 import { useEditorV2Store } from "../../../store/editor-store.ts";
@@ -26,6 +28,43 @@ export function TransformSection({ element }: Props) {
       x: Math.round((label.widthPx - element.width) / 2),
       y: Math.round((label.heightPx - element.height) / 2),
     });
+
+  const fitToLabel = () => {
+    const p = element.props as { naturalWidth?: number; naturalHeight?: number };
+    const marginFactor = 0.9; // 90% of label size (10% padding)
+    const maxW = label.widthPx * marginFactor;
+    const maxH = label.heightPx * marginFactor;
+
+    let newW = maxW;
+    let newH = maxH;
+
+    if (element.type === "qrcode") {
+      const size = Math.round(Math.min(maxW, maxH));
+      newW = size;
+      newH = size;
+    } else if (p.naturalWidth && p.naturalHeight) {
+      const ratio = Math.min(maxW / p.naturalWidth, maxH / p.naturalHeight);
+      newW = Math.round(p.naturalWidth * ratio);
+      newH = Math.round(p.naturalHeight * ratio);
+    } else if (element.type === "barcode") {
+      newW = Math.round(maxW);
+      newH = Math.round(Math.min(maxH, maxW * 0.45));
+    } else if (element.width && element.height) {
+      const ratio = Math.min(maxW / element.width, maxH / element.height);
+      newW = Math.round(element.width * ratio);
+      newH = Math.round(element.height * ratio);
+    } else {
+      newW = Math.round(maxW);
+      newH = Math.round(maxH);
+    }
+
+    update({
+      width: newW,
+      height: newH,
+      x: Math.round((label.widthPx - newW) / 2),
+      y: Math.round((label.heightPx - newH) / 2),
+    });
+  };
 
   return (
     <Section title="Transform">
@@ -64,10 +103,17 @@ export function TransformSection({ element }: Props) {
           </button>
           <button
             onClick={alignBoth}
-            className="flex-1 h-7 rounded-md bg-ink-800 border border-white/5 hover:bg-ink-750 text-ui-xs font-mono text-ink-300 hover:text-ink-100"
+            className="flex-1 h-7 rounded-md bg-ink-800 border border-white/5 hover:bg-ink-750 text-ink-300 hover:text-ink-100 flex items-center justify-center"
             title="Center both"
           >
-            CTR
+            <Focus size={14} />
+          </button>
+          <button
+            onClick={fitToLabel}
+            className="flex-1 h-7 rounded-md bg-ink-800 border border-white/5 hover:bg-ink-750 text-ink-300 hover:text-ink-100 flex items-center justify-center"
+            title="Fit to label / Maximize"
+          >
+            <Maximize size={14} />
           </button>
         </div>
       </div>
