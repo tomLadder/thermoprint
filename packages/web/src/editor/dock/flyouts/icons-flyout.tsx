@@ -15,10 +15,12 @@ import {
   fetchIconAsBlackDataUrl,
   fetchCollectionDetails,
   fetchAllCollectionsGrouped,
+  loadIconsBatch,
   POPULAR_COLLECTIONS,
   type CollectionDetails,
   type AllCollectionItem,
 } from "../../../lib/iconify.ts";
+import { IconifyIcon } from "./iconify-icon.tsx";
 import { useEditorV2Store } from "../../../store/editor-store.ts";
 
 function uid() {
@@ -277,6 +279,21 @@ export function IconsFlyout({
     ? collectionIcons.slice(0, visibleCount)
     : searchResults.icons;
 
+  useEffect(() => {
+    if (displayedIcons.length > 0) {
+      loadIconsBatch(displayedIcons);
+    }
+  }, [displayedIcons]);
+
+  useEffect(() => {
+    const popularSamples = POPULAR_COLLECTIONS.map(
+      (col) => collectionsMap[col.prefix]?.sampleIcon
+    ).filter(Boolean) as string[];
+    if (popularSamples.length > 0) {
+      loadIconsBatch(popularSamples);
+    }
+  }, [collectionsMap]);
+
   return (
     <div className="fixed inset-x-2 bottom-20 max-h-[80vh] md:max-h-none md:inset-auto md:absolute md:bottom-44 md:left-1/2 md:-translate-x-1/2 md:w-[720px] md:h-[560px] bg-ink-850/95 backdrop-blur-sm border border-white/8 rounded-xl shadow-panel z-40 overflow-hidden flex flex-col">
       {/* Header */}
@@ -464,13 +481,10 @@ export function IconsFlyout({
                   >
                     <div className="w-full flex items-center justify-between mb-2">
                       {sampleIcon ? (
-                        <img
-                          src={`https://api.iconify.design/${sampleIcon.replace(
-                            ":",
-                            "/"
-                          )}.svg?color=%23e4e7ec`}
-                          alt={col.name}
+                        <IconifyIcon
+                          name={sampleIcon}
                           className="w-6 h-6 object-contain text-ink-100 group-hover:scale-110 transition-transform duration-150"
+                          title={col.name}
                         />
                       ) : (
                         <Loader2 size={16} className="animate-spin text-ink-400" />
@@ -552,13 +566,10 @@ export function IconsFlyout({
                       >
                         <div className="flex items-center gap-2 min-w-0 pr-1">
                           {col.sampleIcon && (
-                            <img
-                              src={`https://api.iconify.design/${col.sampleIcon.replace(
-                                ":",
-                                "/"
-                              )}.svg?color=%23e4e7ec`}
-                              alt={col.name}
+                            <IconifyIcon
+                              name={col.sampleIcon}
                               className="w-5 h-5 object-contain text-ink-200 shrink-0 group-hover:scale-110 transition-transform"
+                              title={col.name}
                             />
                           )}
                           <div className="min-w-0">
@@ -641,13 +652,10 @@ export function IconsFlyout({
                           className="animate-spin text-accent"
                         />
                       ) : (
-                        <img
-                          src={`https://api.iconify.design/${iconName.replace(
-                            ":",
-                            "/"
-                          )}.svg?color=%23e4e7ec`}
-                          alt={namePart}
+                        <IconifyIcon
+                          name={iconName}
                           className="w-7 h-7 object-contain text-ink-100 group-hover:scale-110 transition-transform duration-150"
+                          title={namePart}
                         />
                       )}
                     </button>
