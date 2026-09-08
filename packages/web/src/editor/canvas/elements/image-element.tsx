@@ -23,7 +23,12 @@ export function ImageElement({ element, isSelected }: Props) {
     if (!p.src) return;
     const img = new window.Image();
     img.src = p.src;
-    img.onload = () => setImage(img);
+    img.onload = () => {
+      setImage(img);
+      if (ref.current) {
+        ref.current.getLayer()?.batchDraw();
+      }
+    };
   }, [p.src]);
 
   if (!image) {
@@ -61,7 +66,11 @@ export function ImageElement({ element, isSelected }: Props) {
             listening={false}
           />
         </Group>
-        <ElementWrapper nodeRef={ref} isSelected={isSelected} />
+        <ElementWrapper
+          nodeRef={ref}
+          isSelected={isSelected}
+          deps={[image, element.width, element.height, p.src]}
+        />
       </>
     );
   }
@@ -99,7 +108,11 @@ export function ImageElement({ element, isSelected }: Props) {
           });
         }}
       />
-      <ElementWrapper nodeRef={ref} isSelected={isSelected} />
+      <ElementWrapper
+        nodeRef={ref}
+        isSelected={isSelected}
+        deps={[image, element.width, element.height, p.src]}
+      />
     </>
   );
 }

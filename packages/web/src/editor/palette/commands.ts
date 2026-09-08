@@ -6,6 +6,7 @@ import {
   Square,
   Minus,
   ImageIcon,
+  Sticker,
   Undo2,
   Redo2,
   Copy,
@@ -70,6 +71,7 @@ export const commands: Command[] = [
   { id: "add-rect", label: "Add rectangle", group: "Insert", icon: Square, shortcut: "R", run: addRectEl },
   { id: "add-line", label: "Add line", group: "Insert", icon: Minus, shortcut: "L", run: addLineEl },
   { id: "add-image", label: "Add image", group: "Insert", icon: ImageIcon, shortcut: "I", run: addImageEl },
+  { id: "add-icon", label: "Add icon", group: "Insert", icon: Sticker, shortcut: "C", run: () => window.dispatchEvent(new CustomEvent("thermoprint:open-icons")) },
 
   // Edit
   { id: "undo", label: "Undo", group: "Edit", icon: Undo2, shortcut: "⌘Z", run: () => useEditorV2Store.temporal.getState().undo() },

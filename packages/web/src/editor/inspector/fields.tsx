@@ -31,7 +31,9 @@ export function Field({
   return (
     <div className="flex items-center gap-2">
       <span
-        className={`text-ui-xs uppercase tracking-wider text-ink-400 w-14 shrink-0 ${mono ? "font-mono" : ""}`}
+        className={`text-ui-xs uppercase tracking-wider text-ink-400 shrink-0 ${
+          mono ? "font-mono" : ""
+        }`}
       >
         {label}
       </span>
@@ -55,19 +57,56 @@ export function NumInput({
   max?: number;
   step?: number;
 }) {
+  const formatVal = (v: number) => {
+    if (isNaN(v)) return 0;
+    return Number(v.toFixed(2));
+  };
+
+  const handleWheel = (e: React.WheelEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? step : -step;
+    let newVal = formatVal((value || 0) + delta);
+    if (min !== undefined) newVal = Math.max(min, newVal);
+    if (max !== undefined) newVal = Math.min(max, newVal);
+    onChange(newVal);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      let newVal = formatVal((value || 0) + step);
+      if (max !== undefined) newVal = Math.min(max, newVal);
+      onChange(newVal);
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      let newVal = formatVal((value || 0) - step);
+      if (min !== undefined) newVal = Math.max(min, newVal);
+      onChange(newVal);
+    }
+  };
+
+  const displayVal =
+    value === undefined || value === null
+      ? 0
+      : Number.isInteger(value)
+      ? value
+      : Number(value.toFixed(1));
+
   return (
-    <div className="flex items-center h-7 rounded-md bg-ink-800 border border-white/5 focus-within:border-accent/50">
+    <div className="flex items-center h-7 rounded-md bg-ink-800 border border-white/5 focus-within:border-accent/50 px-1">
       <input
         type="number"
-        value={Math.round(value)}
+        value={displayVal}
         step={step}
         min={min}
         max={max}
+        onWheel={handleWheel}
+        onKeyDown={handleKeyDown}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full bg-transparent px-2 text-ui-sm text-ink-100 font-mono outline-none tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        className="w-full bg-transparent px-1 text-ui-sm text-ink-100 font-mono outline-none tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
       {suffix && (
-        <span className="text-ui-2xs font-mono text-ink-400 pr-2">
+        <span className="text-ui-2xs font-mono text-ink-400 pr-1 select-none">
           {suffix}
         </span>
       )}
@@ -92,7 +131,9 @@ export function TextInput({
       placeholder={placeholder}
       autoFocus={autoFocus}
       onChange={(e) => onChange(e.target.value)}
-      onFocus={(e) => { if (autoFocus) e.target.select(); }}
+      onFocus={(e) => {
+        if (autoFocus) e.target.select();
+      }}
       className="w-full h-7 px-2 rounded-md bg-ink-800 border border-white/5 focus:border-accent/50 outline-none text-ui-sm text-ink-100"
     />
   );
@@ -138,9 +179,7 @@ export function SegBtn({
       onClick={onClick}
       title={title}
       className={`h-7 flex-1 flex items-center justify-center rounded-[4px] text-ui-sm ${
-        active
-          ? "bg-ink-700 text-accent"
-          : "text-ink-300 hover:text-ink-100"
+        active ? "bg-ink-700 text-accent" : "text-ink-300 hover:text-ink-100"
       }`}
     >
       {children}
@@ -166,8 +205,8 @@ export function ColorInput({
   return (
     <div className="flex items-center h-7 rounded-md bg-ink-800 border border-white/5 px-1.5 gap-1.5">
       <div
-        className="w-4 h-4 rounded-sm border border-white/10"
-        style={{ background: value || "transparent" }}
+        className="w-4 h-4 rounded-sm border border-white/10 shrink-0"
+        style={{ background: value || "#000000" }}
       />
       <input
         value={value}

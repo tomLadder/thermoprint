@@ -15,9 +15,10 @@ const ACCENT_MAP: Record<string, { accent: string; accent600: string }> = {
 interface Props {
   nodeRef: React.RefObject<Konva.Node | null>;
   isSelected: boolean;
+  deps?: unknown[];
 }
 
-export function ElementWrapper({ nodeRef, isSelected }: Props) {
+export function ElementWrapper({ nodeRef, isSelected, deps = [] }: Props) {
   const trRef = useRef<Konva.Transformer>(null);
   const theme = useEditorV2Store((s) => s.theme);
   const { accent, accent600 } = ACCENT_MAP[theme] || ACCENT_MAP.cyan;
@@ -27,7 +28,7 @@ export function ElementWrapper({ nodeRef, isSelected }: Props) {
       trRef.current.nodes([nodeRef.current]);
       trRef.current.getLayer()?.batchDraw();
     }
-  }, [isSelected, nodeRef, accent]);
+  }, [isSelected, nodeRef, accent, nodeRef.current, ...deps]);
 
   if (!isSelected) return null;
 

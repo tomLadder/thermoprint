@@ -271,6 +271,9 @@ export function useKeyboardShortcuts() {
           case "i":
             addImageEl();
             return;
+          case "c":
+            window.dispatchEvent(new CustomEvent("thermoprint:open-icons"));
+            return;
           case "r":
             addRectEl();
             return;

@@ -4,6 +4,7 @@ import {
   QrCode,
   Barcode,
   ImageIcon,
+  Sticker,
   Square,
   Minus,
   Layers,
@@ -15,6 +16,7 @@ import { DockBtn } from "./dock-btn.tsx";
 import { DockGroup } from "./dock-group.tsx";
 import { DockDivider } from "./dock-divider.tsx";
 import { Kbd } from "./kbd.tsx";
+import { useEditorV2Store } from "../../store/editor-store.ts";
 import {
   addTextEl,
   addQrEl,
@@ -26,19 +28,33 @@ import {
 import { LayersFlyout } from "./flyouts/layers-flyout.tsx";
 import { LibraryFlyout } from "./flyouts/library-flyout.tsx";
 import { PrintSettingsFlyout } from "./flyouts/print-settings-flyout.tsx";
+import { IconsFlyout } from "./flyouts/icons-flyout.tsx";
 
-type FlyoutKey = "layers" | "library" | "print" | "more-tools" | null;
+type FlyoutKey = "layers" | "library" | "print" | "icons" | "more-tools" | null;
+
+interface ReplaceIconDetail {
+  initialPrefix?: string | null;
+  targetElementId?: string | null;
+}
 
 export function Dock() {
   const [openFlyout, setOpenFlyout] = useState<FlyoutKey>(null);
+  const [replaceDetail, setReplaceDetail] = useState<ReplaceIconDetail | null>(
+    null
+  );
 
-  const toggle = (key: Exclude<FlyoutKey, null>) =>
+  const toggle = (key: Exclude<FlyoutKey, null>) => {
+    setReplaceDetail(null);
     setOpenFlyout((cur) => (cur === key ? null : key));
+  };
 
   // Close flyout on Escape
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpenFlyout(null);
+      if (e.key === "Escape") {
+        setOpenFlyout(null);
+        setReplaceDetail(null);
+      }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
@@ -51,12 +67,27 @@ export function Dock() {
     return () => window.removeEventListener("thermoprint:open-library", h);
   }, []);
 
+  // Listen for "open icons" & "replace icon" events
+  useEffect(() => {
+    const handleOpenIcons = (e: Event) => {
+      const customEvent = e as CustomEvent<ReplaceIconDetail>;
+      setReplaceDetail(customEvent.detail || null);
+      setOpenFlyout("icons");
+    };
+    window.addEventListener("thermoprint:open-icons", handleOpenIcons);
+    return () =>
+      window.removeEventListener("thermoprint:open-icons", handleOpenIcons);
+  }, []);
+
   return (
     <>
       {openFlyout && (
         <div
           className="fixed inset-0 z-20"
-          onClick={() => setOpenFlyout(null)}
+          onClick={() => {
+            setOpenFlyout(null);
+            setReplaceDetail(null);
+          }}
         />
       )}
       {openFlyout === "layers" && (
@@ -68,6 +99,16 @@ export function Dock() {
       {openFlyout === "print" && (
         <PrintSettingsFlyout onClose={() => setOpenFlyout(null)} />
       )}
+      {openFlyout === "icons" && (
+        <IconsFlyout
+          onClose={() => {
+            setOpenFlyout(null);
+            setReplaceDetail(null);
+          }}
+          initialPrefix={replaceDetail?.initialPrefix}
+          targetElementId={replaceDetail?.targetElementId}
+        />
+      )}
       {openFlyout === "more-tools" && (
         <div className="fixed inset-x-2 bottom-20 md:hidden bg-ink-850/95 backdrop-blur-sm border border-white/8 rounded-lg shadow-panel z-40 overflow-hidden">
           <div className="grid grid-cols-4 gap-1 p-2">
@@ -76,12 +117,16 @@ export function Dock() {
               { icon: QrCode, label: "QR Code", fn: addQrEl },
               { icon: Barcode, label: "Barcode", fn: addBarcodeEl },
               { icon: ImageIcon, label: "Image", fn: addImageEl },
+              { icon: Sticker, label: "Icons", fn: () => setOpenFlyout("icons") },
               { icon: Square, label: "Rectangle", fn: addRectEl },
               { icon: Minus, label: "Line", fn: addLineEl },
             ].map((t) => (
               <button
                 key={t.label}
-                onClick={() => { t.fn(); setOpenFlyout(null); }}
+                onClick={() => {
+                  t.fn();
+                  if (t.label !== "Icons") setOpenFlyout(null);
+                }}
                 className="flex flex-col items-center gap-1 py-3 rounded-lg text-ink-200 hover:bg-ink-800 hover:text-ink-50 hover-fade"
               >
                 <t.icon size={20} />
@@ -111,17 +156,30 @@ export function Dock() {
                 <DockBtn icon={QrCode} label="QR" shortcut="Q" onClick={addQrEl} />
                 <DockBtn icon={Barcode} label="Barcode" shortcut="B" onClick={addBarcodeEl} />
                 <DockBtn icon={ImageIcon} label="Image" shortcut="I" onClick={addImageEl} />
+                <DockBtn
+                  icon={Sticker}
+                  label="Icons"
+                  shortcut="C"
+                  onClick={() => toggle("icons")}
+                  active={openFlyout === "icons"}
+                />
                 <DockBtn icon={Square} label="Rect" shortcut="R" onClick={addRectEl} />
                 <DockBtn icon={Minus} label="Line" shortcut="L" onClick={addLineEl} />
               </DockGroup>
               <DockDivider />
             </div>
 
-            {/* Mobile: Text + Image + More */}
+            {/* Mobile: Text + Image + Icons + More */}
             <div className="md:hidden contents">
               <DockGroup label="Add">
                 <DockBtn icon={Type} label="Text" onClick={addTextEl} />
                 <DockBtn icon={ImageIcon} label="Image" onClick={addImageEl} />
+                <DockBtn
+                  icon={Sticker}
+                  label="Icons"
+                  onClick={() => toggle("icons")}
+                  active={openFlyout === "icons"}
+                />
                 <DockBtn
                   icon={MoreHorizontal}
                   label="More"
@@ -165,9 +223,13 @@ export function Dock() {
             <Kbd>⌘</Kbd>+<Kbd>scroll</Kbd> zoom
           </span>
           <span className="text-ink-700">•</span>
-          <span>
+          <button
+            onClick={() => useEditorV2Store.setState({ paletteOpen: true })}
+            className="hover:text-accent hover-fade flex items-center gap-1 cursor-pointer outline-none"
+            title="Click or press ⌘K to open Command Palette"
+          >
             <Kbd>⌘K</Kbd> commands
-          </span>
+          </button>
         </div>
       </div>
     </>

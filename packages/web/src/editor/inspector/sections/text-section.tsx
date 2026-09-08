@@ -34,6 +34,7 @@ export function TextSection({ element }: Props) {
     fill?: string;
     align?: string;
     italic?: boolean;
+    uppercase?: boolean;
   };
 
   const update = (patch: Record<string, unknown>) =>
@@ -61,7 +62,7 @@ export function TextSection({ element }: Props) {
           />
         </Field>
       </div>
-      <div className="mt-1.5">
+      <div className="mt-1.5 space-y-1.5">
         <Field label="Font">
           <Select
             value={p.fontFamily || "Inter"}
@@ -75,47 +76,58 @@ export function TextSection({ element }: Props) {
             ]}
           />
         </Field>
+
+        <div className="flex gap-1.5">
+          <SegGroup>
+            <SegBtn
+              active={(p.fontWeight || 400) >= 600}
+              onClick={() =>
+                update({ fontWeight: (p.fontWeight || 400) >= 600 ? 400 : 700 })
+              }
+              title="Bold"
+            >
+              <Bold size={14} />
+            </SegBtn>
+            <SegBtn
+              active={!!p.italic}
+              onClick={() => update({ italic: !p.italic })}
+              title="Italic"
+            >
+              <Italic size={14} />
+            </SegBtn>
+          </SegGroup>
+          <SegGroup>
+            <SegBtn
+              active={!!p.uppercase}
+              onClick={() => update({ uppercase: !p.uppercase })}
+              title="All Caps (TT)"
+            >
+              <span className="font-bold text-[11px] font-mono leading-none px-1">TT</span>
+            </SegBtn>
+          </SegGroup>
+          <SegGroup>
+            <SegBtn
+              active={p.align === "left" || !p.align}
+              onClick={() => update({ align: "left" })}
+            >
+              <AlignLeft size={14} />
+            </SegBtn>
+            <SegBtn
+              active={p.align === "center"}
+              onClick={() => update({ align: "center" })}
+            >
+              <AlignCenter size={14} />
+            </SegBtn>
+            <SegBtn
+              active={p.align === "right"}
+              onClick={() => update({ align: "right" })}
+            >
+              <AlignRight size={14} />
+            </SegBtn>
+          </SegGroup>
+        </div>
       </div>
-      <div className="mt-1.5 flex gap-1.5">
-        <SegGroup>
-          <SegBtn
-            active={(p.fontWeight || 400) >= 600}
-            onClick={() =>
-              update({ fontWeight: (p.fontWeight || 400) >= 600 ? 400 : 700 })
-            }
-            title="Bold"
-          >
-            <Bold size={14} />
-          </SegBtn>
-          <SegBtn
-            active={!!p.italic}
-            onClick={() => update({ italic: !p.italic })}
-            title="Italic"
-          >
-            <Italic size={14} />
-          </SegBtn>
-        </SegGroup>
-        <SegGroup>
-          <SegBtn
-            active={p.align === "left"}
-            onClick={() => update({ align: "left" })}
-          >
-            <AlignLeft size={14} />
-          </SegBtn>
-          <SegBtn
-            active={p.align === "center"}
-            onClick={() => update({ align: "center" })}
-          >
-            <AlignCenter size={14} />
-          </SegBtn>
-          <SegBtn
-            active={p.align === "right"}
-            onClick={() => update({ align: "right" })}
-          >
-            <AlignRight size={14} />
-          </SegBtn>
-        </SegGroup>
-      </div>
+
       <div className="mt-1.5">
         <Field label="Color">
           <ColorInput

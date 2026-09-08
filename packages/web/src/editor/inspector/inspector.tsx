@@ -5,6 +5,7 @@ import {
   Square,
   Minus,
   ImageIcon,
+  Sticker,
   Copy,
   ArrowUp,
   ArrowDown,
@@ -17,6 +18,7 @@ import { TextSection } from "./sections/text-section.tsx";
 import { QrSection } from "./sections/qr-section.tsx";
 import { BarcodeSection } from "./sections/barcode-section.tsx";
 import { ShapeSection } from "./sections/shape-section.tsx";
+import { ImageSection } from "./sections/image-section.tsx";
 
 const TYPE_LABELS: Record<string, string> = {
   text: "Text",
@@ -49,8 +51,9 @@ export function Inspector() {
   if (selected.length === 0) return null;
 
   const el: BaseElement | null = selected.length === 1 ? selected[0] : null;
-  const TypeIcon = el ? TYPE_ICONS[el.type] : null;
-  const typeLabel = el ? TYPE_LABELS[el.type] : null;
+  const isIcon = Boolean(el?.props?.iconName);
+  const TypeIcon = el ? (isIcon ? Sticker : TYPE_ICONS[el.type]) : null;
+  const typeLabel = el ? (isIcon ? "Icon" : TYPE_LABELS[el.type]) : null;
 
   return (
     <div
@@ -111,6 +114,7 @@ export function Inspector() {
             {(el.type === "rect" || el.type === "line") && (
               <ShapeSection element={el} />
             )}
+            {el.type === "image" && <ImageSection element={el} />}
           </div>
         </>
       ) : (

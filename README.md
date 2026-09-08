@@ -41,7 +41,8 @@
 ## Features
 
 **Web Editor** — [try it now](https://tomladder.github.io/thermoprint/)
-- Drag & drop label designer with text, images, QR codes, barcodes, and shapes
+- Drag & drop label designer with text, images, icons, QR codes, barcodes, and shapes
+- Iconify icon browser (`C` shortcut) supporting 200+ sets (>200,000 vector icons)
 - Resize, rotate, and align elements visually on a Konva.js canvas
 - Live-preview with gap/continuous paper simulation and ghost labels
 - Print directly from the browser via Web Bluetooth (Chrome/Edge)

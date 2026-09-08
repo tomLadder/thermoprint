@@ -1,5 +1,7 @@
 node_modules/
 dist/
+.yarn/
+package-lock.json
 bun.lockb
 *.tsbuildinfo
 
