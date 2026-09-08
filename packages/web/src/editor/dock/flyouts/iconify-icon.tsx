@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   getIconData,
   queueIconLoad,
@@ -20,25 +20,54 @@ export const IconifyIcon = React.memo(function IconifyIcon({
   color = "currentColor",
   title,
 }: IconifyIconProps) {
+  const containerRef = useRef<HTMLSpanElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
   const [, setTick] = useState(0);
 
+  const icon = name ? getIconData(name) : undefined;
+
   useEffect(() => {
-    if (!name) return;
+    if (icon) {
+      setIsVisible(true);
+      return;
+    }
+
+    if (!containerRef.current || typeof IntersectionObserver === "undefined") {
+      setIsVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "150px" }
+    );
+
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [name, Boolean(icon)]);
+
+  useEffect(() => {
+    if (!name || !isVisible) return;
     if (getIconData(name)) return;
 
     queueIconLoad(name);
     return subscribeToIcons(() => {
       setTick((t) => t + 1);
     });
-  }, [name]);
+  }, [name, isVisible]);
 
   if (!name) return null;
 
-  const icon = getIconData(name);
   if (!icon) {
     return (
       <span
-        className={`inline-block animate-pulse bg-white/10 rounded shrink-0 ${className}`}
+        ref={containerRef}
+        className={`inline-block bg-white/5 rounded shrink-0 ${className}`}
         style={size ? { width: size, height: size } : undefined}
       />
     );

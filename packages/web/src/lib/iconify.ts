@@ -82,6 +82,39 @@ const ICONIFY_HOSTS = [
   "https://api.unisvg.com",
 ];
 
+class ConcurrencyQueue {
+  private running = 0;
+  private queue: Array<() => Promise<void>> = [];
+
+  constructor(private maxConcurrent = 3) {}
+
+  add<T>(task: () => Promise<T>): Promise<T> {
+    return new Promise((resolve, reject) => {
+      this.queue.push(async () => {
+        try {
+          const result = await task();
+          resolve(result);
+        } catch (err) {
+          reject(err);
+        }
+      });
+      this.next();
+    });
+  }
+
+  private next() {
+    if (this.running >= this.maxConcurrent || this.queue.length === 0) return;
+    this.running++;
+    const task = this.queue.shift()!;
+    task().finally(() => {
+      this.running--;
+      this.next();
+    });
+  }
+}
+
+const apiQueue = new ConcurrencyQueue(3);
+
 async function fetchJsonWithFallback(path: string): Promise<any> {
   let lastError: any = null;
   for (const host of ICONIFY_HOSTS) {
@@ -90,6 +123,11 @@ async function fetchJsonWithFallback(path: string): Promise<any> {
       if (res.ok) {
         return await res.json();
       }
+      if (res.status === 429) {
+        // Rate limited on this host, try next host!
+        continue;
+      }
+      lastError = new Error(`Host ${host} returned HTTP ${res.status}`);
     } catch (err) {
       lastError = err;
     }
@@ -203,7 +241,7 @@ export async function loadIconsBatch(
 
       let inflight = inFlightBatches.get(batchKey);
       if (!inflight) {
-        inflight = (async () => {
+        inflight = apiQueue.add(async () => {
           try {
             const data = await fetchJsonWithFallback(
               `/${prefix}.json?icons=${encodeURIComponent(chunk.join(","))}`
@@ -222,7 +260,7 @@ export async function loadIconsBatch(
           } finally {
             inFlightBatches.delete(batchKey);
           }
-        })();
+        });
         inFlightBatches.set(batchKey, inflight);
       }
       promises.push(inflight);
