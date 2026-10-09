@@ -199,9 +199,13 @@ export class Printer {
           this.emit("progress", { bytesSent: baseOffset + preambleBytes + sent, totalBytes });
         });
 
-        debugLog("PRINT", `copy ${copy + 1}/${copies}: data sent, waiting for result`);
-        await this.waitForPrintResult();
-        debugLog("PRINT", `copy ${copy + 1}/${copies} done`);
+        if (this.protocol.confirmsPrint === false) {
+          debugLog("PRINT", `copy ${copy + 1}/${copies}: data sent (printer sends no confirmation)`);
+        } else {
+          debugLog("PRINT", `copy ${copy + 1}/${copies}: data sent, waiting for result`);
+          await this.waitForPrintResult();
+          debugLog("PRINT", `copy ${copy + 1}/${copies} done`);
+        }
       }
       debugLog("PRINT", "all copies done");
     } finally {
@@ -224,9 +228,11 @@ export class Printer {
     };
   }
 
+  /** Battery level 0-100, or -1 if the printer can't report it */
   async getBattery(): Promise<number> {
     if (this._printing) throw new ThermoprintError(ErrorCode.PRINT_FAILED, "Cannot query battery while printing");
     const cmd = this.protocol.buildBatteryQuery();
+    if (!cmd) return -1;
     await this.flowController.send(cmd.data);
     const response = await this.waitForResponse("battery", 3000);
     // Battery is in response[1] as a raw byte (0-100)
@@ -247,6 +253,7 @@ export class Printer {
   async getInfo(type: "firmware" | "serial" | "mac" | "bt-version" | "bt-name" | "speed"): Promise<string> {
     if (this._printing) throw new ThermoprintError(ErrorCode.PRINT_FAILED, "Cannot query info while printing");
     const cmd = this.protocol.buildInfoQuery(type);
+    if (!cmd) throw new ThermoprintError(ErrorCode.NOT_SUPPORTED, `Printer does not report ${type}`);
     await this.flowController.send(cmd.data);
     const response = await this.waitForResponse(type, 3000);
     if (typeof response.value === "string" && response.value) return response.value;

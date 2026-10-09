@@ -15,7 +15,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 function StatusBadge({ status }: { status: string | null }) {
-  if (!status || status === "cover_closed") {
+  if (!status || status === "ready" || status === "cover_closed") {
     return (
       <div className="flex items-center gap-1.5 mb-3 px-2 py-1.5 rounded-md bg-emerald-400/10 border border-emerald-400/20 text-ui-sm text-emerald-400 font-medium">
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />

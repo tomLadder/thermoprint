@@ -8,6 +8,7 @@ import {
   discoverAll,
   Printer,
   findDeviceByName,
+  mmToPx,
 } from "@thermoprint/core";
 import type { BlePeripheral, PrintOptions, DitherMode } from "@thermoprint/core";
 import { NobleBleTransport } from "../../transport/noble.js";
@@ -68,7 +69,12 @@ export function registerPrintCommands(program: Command): void {
         // Discover printer
         const peripheral = await findPrinter(transport, printerName, timeout);
         const profile = findDeviceByName(peripheral.name);
-        const printWidth = parseInt(opts.width) || config.width || 384;
+        // Printers whose head spans the label width (P1) take the image as-is,
+        // sized to the default label width instead of the 384px head width
+        const labelConfig = profile?.labelConfig;
+        const rotateLabel = labelConfig?.rotate ?? true;
+        const defaultWidth = labelConfig && !rotateLabel ? mmToPx(labelConfig.defaultSize.widthMm) : 384;
+        const printWidth = parseInt(opts.width) || config.width || defaultWidth;
 
         if (spinner) spinner.text = `Connecting to ${peripheral.name}...`;
 
@@ -78,7 +84,7 @@ export function registerPrintCommands(program: Command): void {
         if (spinner) spinner.text = "Loading image...";
 
         // Load image
-        const image = await loadImage(imagePath, printWidth, { rotate: opts.rotate });
+        const image = await loadImage(imagePath, printWidth, { rotate: opts.rotate && rotateLabel });
 
         // Build print options
         const printOpts: PrintOptions = {};

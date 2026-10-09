@@ -11,7 +11,8 @@ import { ConnectFlow } from "./connect-flow/connect-flow.tsx";
 import { useKeyboardShortcuts, setPrintFn } from "../lib/keyboard.ts";
 import { useEditorV2Store } from "../store/editor-store.ts";
 import { getPrinter } from "../hooks/use-web-bluetooth.ts";
-import type { RawImageData } from "@thermoprint/core";
+import { usePrinterStore } from "../store/printer-store.ts";
+import { getDevice, type RawImageData } from "@thermoprint/core";
 
 function captureLabel(
   stage: Konva.Stage,
@@ -89,9 +90,12 @@ export function Editor() {
     // Wait a frame for Konva to re-render without selection handles
     await new Promise((r) => requestAnimationFrame(r));
 
-    // Capture the label region at 1:1 pixel resolution
+    // Capture the label region at 1:1 pixel resolution. Tape printers feed the
+    // label's width along the paper, so the design is rotated to match the head.
     const raw = captureLabel(stage, label.widthPx, label.heightPx);
-    const canvas = rotateCanvas90CW(raw);
+    const { modelId } = usePrinterStore.getState();
+    const rotate = getDevice(modelId ?? "")?.labelConfig?.rotate ?? true;
+    const canvas = rotate ? rotateCanvas90CW(raw) : raw;
     const rotatedW = canvas.width;
     const rotatedH = canvas.height;
 

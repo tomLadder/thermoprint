@@ -13,6 +13,7 @@
   <img src="https://img.shields.io/badge/Marklife_P15-supported-009688.svg" alt="Marklife P15">
   <img src="https://img.shields.io/badge/Marklife_P12-supported-009688.svg" alt="Marklife P12">
   <img src="https://img.shields.io/badge/Marklife_P7-supported-009688.svg" alt="Marklife P7">
+  <img src="https://img.shields.io/badge/P1_Mini-supported-009688.svg" alt="P1 Mini">
   <img src="https://img.shields.io/badge/L11_protocol-compatible-lightgrey.svg" alt="L11 Compatible">
 </p>
 
@@ -145,6 +146,7 @@ thermoprint status
 | **Marklife P15** | L11 | 384 px (48 mm) | ✅ Fully supported |
 | **Marklife P12** | L11 | 384 px (48 mm) | ✅ Fully supported |
 | **Marklife P7** | L11 | 384 px (48 mm) | ✅ Fully supported |
+| **P1 Mini** (Topprint app) | TSPL | 384 px (48 mm) | ✅ Supported |
 | Other L11-compatible | L11 | Varies | Should work |
 
 **Have a different printer?** Any label printer using the L11 protocol should work. Adding a new printer is just a [device profile](docs/adding-a-printer.md) — a plain object with BLE service/characteristic UUIDs and settings.

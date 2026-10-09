@@ -2,6 +2,7 @@ import type { DeviceProfile } from "./types.js";
 import { p15Profile } from "./profiles/p15.js";
 import { p12Profile } from "./profiles/p12.js";
 import { m60Profile } from "./profiles/m60.js";
+import { p1Profile } from "./profiles/p1.js";
 
 const devices: DeviceProfile[] = [];
 
@@ -32,3 +33,4 @@ export function getRegisteredDevices(): DeviceProfile[] {
 registerDevice(p15Profile);
 registerDevice(p12Profile);
 registerDevice(m60Profile);
+registerDevice(p1Profile);

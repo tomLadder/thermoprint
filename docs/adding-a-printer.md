@@ -148,6 +148,12 @@ export class MyProtocol implements PrinterProtocol {
 }
 ```
 
+Printers that differ from the L11 flow can opt out of parts of it — see `src/protocol/tspl/protocol.ts` for an example:
+
+- `readonly confirmsPrint = false` — the printer never reports a finished job, so `print()` resolves once all data is sent.
+- `buildBatteryQuery()` / `buildInfoQuery()` may return `null` when the printer can't report that value.
+- `labelConfig.rotate: false` in the device profile — the label width spans the print head, so designs are printed as-is instead of rotated 90°.
+
 ### 2. Register the protocol
 
 Add it to `src/protocol/registry.ts`:

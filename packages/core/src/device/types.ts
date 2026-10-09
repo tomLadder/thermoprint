@@ -14,6 +14,12 @@ export interface DeviceLabelConfig {
   gapSizes: LabelSizePreset[];
   continuousSizes: LabelSizePreset[];
   defaultSize: LabelSizePreset;
+  /**
+   * Rotate designs 90° CW before printing. True for tape printers (P15, P12) whose
+   * label width runs along the feed; false when the label width spans the print
+   * head (P1). Default: true.
+   */
+  rotate?: boolean;
 }
 
 export interface DeviceProfile {

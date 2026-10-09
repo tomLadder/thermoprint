@@ -14,6 +14,7 @@ export enum ErrorCode {
   LOW_BATTERY = "LOW_BATTERY",
   FLOW_CONTROL_TIMEOUT = "FLOW_CONTROL_TIMEOUT",
   INVALID_IMAGE = "INVALID_IMAGE",
+  NOT_SUPPORTED = "NOT_SUPPORTED",
 }
 
 export class ThermoprintError extends Error {

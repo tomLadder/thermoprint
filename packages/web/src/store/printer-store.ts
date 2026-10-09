@@ -56,6 +56,8 @@ export function applyModelDefaults(modelId: string): void {
   const { widthMm, heightMm } = lc.defaultSize;
   useEditorStore.setState({
     label: { widthMm, heightMm, widthPx: mmToPx(widthMm), heightPx: mmToPx(heightMm) },
+    // Preview the roll the way it feeds: along the width for rotated (tape) printers
+    rollDirection: lc.rotate === false ? "vertical" : "horizontal",
   });
 }
 

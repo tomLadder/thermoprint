@@ -29,6 +29,7 @@ export type {
 export { registerProtocol, getProtocol } from "./protocol/registry.js";
 export { L11Protocol } from "./protocol/l11/protocol.js";
 export { X2Protocol } from "./protocol/x2/protocol.js";
+export { TsplProtocol } from "./protocol/tspl/protocol.js";
 
 // Device types & registry (for adding new printer models)
 export type {
